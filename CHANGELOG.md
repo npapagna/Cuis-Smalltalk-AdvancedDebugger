@@ -6,6 +6,10 @@ project does not follow [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## Added
+* First implementation of `TemporaryVariablesInspectorMorph` displaying temporary variable names and
+  their values as string.
+
 ## Changed
 * Uses the new `AdvancedDebuggerWindow` instead of the built-in `DebuggerWindow` for opening the debugger.  
   `AdvancedDebuggerWindow` does not have any new behavior yet. 
