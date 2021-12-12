@@ -1,13 +1,13 @@
-'From Cuis 5.0 [latest update: #4913] on 11 December 2021 at 1:43:51 pm'!
+'From Cuis 5.0 [latest update: #4913] on 12 December 2021 at 3:46:09 pm'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 2!
+!provides: 'Tools-AdvancedDebugger' 1 3!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 
 
 !classDefinition: #TemporaryVariablesInspectorMorph category: #'Tools-AdvancedDebugger-UI'!
 LayoutMorph subclass: #TemporaryVariablesInspectorMorph
-	instanceVariableNames: 'model'
+	instanceVariableNames: 'model debugger'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger-UI'!
@@ -41,10 +41,13 @@ name
 
 	^ name! !
 
-!TemporaryVariablesInspectorMorph methodsFor: 'initialization' stamp: 'NPM 12/11/2021 13:31:37'!
-initializeModel: aContextVariablesInspector
+!TemporaryVariablesInspectorMorph methodsFor: 'initialization' stamp: 'NPM 12/12/2021 12:15:30'!
+initializeOn: aDebugger
 
-	model _ aContextVariablesInspector.
+	debugger _ aDebugger.
+	model _ aDebugger contextVariablesInspector.
+
+	debugger addDependent: self.
 	model addDependent: self.! !
 
 !TemporaryVariablesInspectorMorph methodsFor: 'rendering' stamp: 'NPM 12/11/2021 13:27:32'!
@@ -60,21 +63,23 @@ refreshTemporaryVariables
 		self addMorph: temporaryVariableMorph layoutSpec: (LayoutSpec morphHeightProportionalWidth: 1)
 	].! !
 
-!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 12/11/2021 13:27:58'!
+!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 12/12/2021 12:40:10'!
 update: anEvent
 
-	anEvent = #fieldList ifTrue: [  self refreshTemporaryVariables ].! !
+	anEvent = #fieldList ifTrue: [  self refreshTemporaryVariables ].
+	anEvent = #contextStackList ifTrue: [ self refreshTemporaryVariables ].
+	anEvent = #contentsSelection ifTrue: [ self refreshTemporaryVariables ].! !
 
-!TemporaryVariablesInspectorMorph class methodsFor: 'instance creation' stamp: 'NPM 12/11/2021 13:31:12'!
-model: aContextVariablesInspector
+!TemporaryVariablesInspectorMorph class methodsFor: 'instance creation' stamp: 'NPM 12/12/2021 12:14:33'!
+on: aDebugger
 
 	^ self
 		newColumn
-		initializeModel: aContextVariablesInspector
+		initializeOn: aDebugger
 
 	! !
 
-!AdvancedDebuggerWindow methodsFor: 'GUI building' stamp: 'NPM 12/11/2021 13:30:59'!
+!AdvancedDebuggerWindow methodsFor: 'GUI building' stamp: 'NPM 12/12/2021 12:14:18'!
 buildMorphicWindow
 	"Open a full morphic debugger with the given label"
 
@@ -122,7 +127,7 @@ buildMorphicWindow
 	bottomMorph
 		addMorph: receiverInspector proportionalWidth: 0.2;
 		addAdjusterAndMorph: receiverInspectorText proportionalWidth: 0.3;
-		addAdjusterAndMorph: (TemporaryVariablesInspectorMorph model: model contextVariablesInspector) proportionalWidth: 0.5.";
+		addAdjusterAndMorph: (TemporaryVariablesInspectorMorph on: model) proportionalWidth: 0.5.";
 		addAdjusterAndMorph: contextVariableInspector proportionalWidth: 0.2;
 		addAdjusterAndMorph: contextVariableInspectorText proportionalWidth: 0.3."
 
