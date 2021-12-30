@@ -1,13 +1,33 @@
-'From Cuis 5.0 [latest update: #4913] on 12 December 2021 at 3:46:09 pm'!
+'From Cuis 5.0 [latest update: #4913] on 30 December 2021 at 2:47:05 pm'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 3!
+!provides: 'Tools-AdvancedDebugger' 1 4!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 
 
+!classDefinition: #ContextVariablesInspectorToTemporaryVariablesInspectorAdapter category: #'Tools-AdvancedDebugger-UI'!
+ContextVariablesInspector subclass: #ContextVariablesInspectorToTemporaryVariablesInspectorAdapter
+	instanceVariableNames: 'aDContextVariablesInspector'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger-UI'!
+!classDefinition: 'ContextVariablesInspectorToTemporaryVariablesInspectorAdapter class' category: #'Tools-AdvancedDebugger-UI'!
+ContextVariablesInspectorToTemporaryVariablesInspectorAdapter class
+	instanceVariableNames: ''!
+
+!classDefinition: #TemporaryVariableMorph category: #'Tools-AdvancedDebugger-UI'!
+LayoutMorph subclass: #TemporaryVariableMorph
+	instanceVariableNames: 'temporaryVariable'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger-UI'!
+!classDefinition: 'TemporaryVariableMorph class' category: #'Tools-AdvancedDebugger-UI'!
+TemporaryVariableMorph class
+	instanceVariableNames: ''!
+
 !classDefinition: #TemporaryVariablesInspectorMorph category: #'Tools-AdvancedDebugger-UI'!
 LayoutMorph subclass: #TemporaryVariablesInspectorMorph
-	instanceVariableNames: 'model debugger'
+	instanceVariableNames: 'temporaryVariablesInspector'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger-UI'!
@@ -27,12 +47,22 @@ AdvancedDebuggerWindow class
 
 !classDefinition: #TemporaryVariable category: #'Tools-AdvancedDebugger'!
 Object subclass: #TemporaryVariable
-	instanceVariableNames: 'name index context'
+	instanceVariableNames: 'name index context lastReadValue changed'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger'!
 !classDefinition: 'TemporaryVariable class' category: #'Tools-AdvancedDebugger'!
 TemporaryVariable class
+	instanceVariableNames: ''!
+
+!classDefinition: #TemporaryVariablesInspector category: #'Tools-AdvancedDebugger'!
+Object subclass: #TemporaryVariablesInspector
+	instanceVariableNames: 'context a'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger'!
+!classDefinition: 'TemporaryVariablesInspector class' category: #'Tools-AdvancedDebugger'!
+TemporaryVariablesInspector class
 	instanceVariableNames: ''!
 
 
@@ -41,49 +71,137 @@ name
 
 	^ name! !
 
-!TemporaryVariablesInspectorMorph methodsFor: 'initialization' stamp: 'NPM 12/12/2021 12:15:30'!
-initializeOn: aDebugger
+!TemporaryVariable methodsFor: 'printing' stamp: 'NPM 12/30/2021 12:46:55'!
+printOn: aStream
 
-	debugger _ aDebugger.
-	model _ aDebugger contextVariablesInspector.
+	aStream
+		nextPut: $<;
+		nextPutAll: name;
+		nextPut: $=;
+		nextPutAll: self value displayStringOrText;
+		nextPut: $>
+		! !
 
-	debugger addDependent: self.
-	model addDependent: self.! !
-
-!TemporaryVariablesInspectorMorph methodsFor: 'rendering' stamp: 'NPM 12/11/2021 13:27:32'!
-refreshTemporaryVariables
+!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'accessing' stamp: 'NPM 12/30/2021 14:38:24'!
+object: aMethodContext 
 	
+	super object: aMethodContext.
+	
+	aDContextVariablesInspector context: aMethodContext.! !
+
+!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'accessing' stamp: 'NPM 12/30/2021 14:38:05'!
+update
+	
+	super update.
+	
+	aDContextVariablesInspector update! !
+
+!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'initialization' stamp: 'NPM 12/28/2021 10:51:17'!
+initializeFor: anADContextVariablesInspector 
+	
+	aDContextVariablesInspector := anADContextVariablesInspector.! !
+
+!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter class methodsFor: 'instance creation' stamp: 'NPM 12/30/2021 14:39:53'!
+for: aTemporaryVariablesInspector 
+	
+	^ self
+		new
+		initializeFor: aTemporaryVariablesInspector ! !
+
+!TemporaryVariableMorph methodsFor: 'events-registering' stamp: 'NPM 12/30/2021 12:51:08'!
+registerToTemporaryVariableEvents
+	
+	temporaryVariable
+		whenChangesSend: #refresh
+		to: self! !
+
+!TemporaryVariableMorph methodsFor: 'initialization' stamp: 'NPM 12/30/2021 12:24:30'!
+defaultColor
+
+	^ Color transparent! !
+
+!TemporaryVariableMorph methodsFor: 'initialization' stamp: 'NPM 12/30/2021 12:51:08'!
+initializeFor: aTemporaryVariable 
+
+	temporaryVariable _ aTemporaryVariable.
+	
+	self
+		initializeSubmorphs;
+		registerToTemporaryVariableEvents;
+		refresh.! !
+
+!TemporaryVariableMorph methodsFor: 'initialization' stamp: 'NPM 12/30/2021 12:25:58'!
+initializeSubmorphs
+
+	self
+		addMorph: (LabelMorph contents: '')
+		layoutSpec: (LayoutSpec morphHeightProportionalWidth: 1)! !
+
+!TemporaryVariableMorph methodsFor: 'updating' stamp: 'NPM 12/30/2021 14:29:24'!
+highlightColor
+
+	^ temporaryVariable
+		ifChanged: [ Color blue ]
+		ifNotChanged: [ Color black ]! !
+
+!TemporaryVariableMorph methodsFor: 'updating' stamp: 'NPM 12/30/2021 14:29:24'!
+refresh
+	
+	self firstSubmorph 
+		contents: (temporaryVariable name, ' ', temporaryVariable value displayStringOrText);
+		color: self highlightColor.
+		
+	self morphExtent: self firstSubmorph morphExtent! !
+
+!TemporaryVariableMorph class methodsFor: 'instance creation' stamp: 'NPM 12/30/2021 12:15:37'!
+for: aTemporaryVariable 
+	
+	^ self
+		newRow
+		initializeFor: aTemporaryVariable ! !
+
+!TemporaryVariablesInspectorMorph methodsFor: 'events-registering' stamp: 'NPM 12/30/2021 14:34:07'!
+registerToTemporaryVariablesInspectorEvents
+
+	temporaryVariablesInspector
+		whenContextChangesSend: #reloadTemporaryVariables
+		to: self! !
+
+!TemporaryVariablesInspectorMorph methodsFor: 'initialization' stamp: 'NPM 12/30/2021 14:34:07'!
+initializeOn: aTemporaryVariablesInspector
+
+	temporaryVariablesInspector _ aTemporaryVariablesInspector.
+	
+	self registerToTemporaryVariablesInspectorEvents.! !
+
+!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 12/30/2021 14:35:45'!
+reloadTemporaryVariables
+		
 	self removeAllMorphs.
 	
-	model doItContext tempNames withIndexDo: [ :temporaryVariableName :temporaryVariableIndex |
-		| temporaryVariable temporaryVariableMorph |
-		temporaryVariable _ TemporaryVariable named: temporaryVariableName at: temporaryVariableIndex in: model doItContext.
-		temporaryVariableMorph _ LabelMorph contents: temporaryVariable name, ' ', temporaryVariable value displayStringOrText.
-		
-		self addMorph: temporaryVariableMorph layoutSpec: (LayoutSpec morphHeightProportionalWidth: 1)
-	].! !
+	temporaryVariablesInspector temporaryVariables do: [ :temporaryVariable |
+		self
+			addMorph: (TemporaryVariableMorph for: temporaryVariable)
+			layoutSpec: (LayoutSpec morphHeightProportionalWidth: 1) ].
+! !
 
-!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 12/12/2021 12:40:10'!
-update: anEvent
-
-	anEvent = #fieldList ifTrue: [  self refreshTemporaryVariables ].
-	anEvent = #contextStackList ifTrue: [ self refreshTemporaryVariables ].
-	anEvent = #contentsSelection ifTrue: [ self refreshTemporaryVariables ].! !
-
-!TemporaryVariablesInspectorMorph class methodsFor: 'instance creation' stamp: 'NPM 12/12/2021 12:14:33'!
-on: aDebugger
+!TemporaryVariablesInspectorMorph class methodsFor: 'instance creation' stamp: 'NPM 12/30/2021 14:34:28'!
+on: aTemporaryVariablesInspector
 
 	^ self
 		newColumn
-		initializeOn: aDebugger
+		initializeOn: aTemporaryVariablesInspector
 
 	! !
 
-!AdvancedDebuggerWindow methodsFor: 'GUI building' stamp: 'NPM 12/12/2021 12:14:18'!
+!AdvancedDebuggerWindow methodsFor: 'GUI building' stamp: 'NPM 12/30/2021 14:41:55'!
 buildMorphicWindow
 	"Open a full morphic debugger with the given label"
 
-	| bottomMorph |
+	| bottomMorph temporaryVariablesInspector |
+	
+	temporaryVariablesInspector _ TemporaryVariablesInspector new.
+	model contextVariablesInspector become: (ContextVariablesInspectorToTemporaryVariablesInspectorAdapter for: temporaryVariablesInspector).
 
 	stackList _ PluggableListMorph
 		model: model 
@@ -116,19 +234,19 @@ buildMorphicWindow
 			mainView: self
 			menuGetter: #contextFieldListMenu
 			keystrokeAction: #inspectorKey:from:.
-	contextVariableInspector doubleClickSelector: #inspectSelection.
+	contextVariableInspector doubleClickSelector: #inspectSelection."
 	contextVariableInspectorText _ (TextModelMorph
 			textProvider: model contextVariablesInspector
 			textGetter: #acceptedContents 
 			textSetter: #accept:
-			selectionGetter: #contentsSelection) emptyTextDisplayMessage: 'Context scope'."
+			selectionGetter: #contentsSelection) emptyTextDisplayMessage: 'Context scope'.
 
 	bottomMorph _ LayoutMorph newRow.
 	bottomMorph
 		addMorph: receiverInspector proportionalWidth: 0.2;
 		addAdjusterAndMorph: receiverInspectorText proportionalWidth: 0.3;
-		addAdjusterAndMorph: (TemporaryVariablesInspectorMorph on: model) proportionalWidth: 0.5.";
-		addAdjusterAndMorph: contextVariableInspector proportionalWidth: 0.2;
+		addAdjusterAndMorph: (TemporaryVariablesInspectorMorph on: temporaryVariablesInspector) proportionalWidth: 0.5.
+		"addAdjusterAndMorph: contextVariableInspector proportionalWidth: 0.2;
 		addAdjusterAndMorph: contextVariableInspectorText proportionalWidth: 0.3."
 
 	self layoutMorph
@@ -136,38 +254,154 @@ buildMorphicWindow
 		addAdjusterAndMorph: self buildLowerPanes proportionalHeight: 0.55;
 		addAdjusterAndMorph: bottomMorph proportionalHeight: 0.2! !
 
-!AdvancedDebuggerWindow methodsFor: 'user interface' stamp: 'NPM 12/11/2021 13:23:19'!
-okToChangeCodePane
-
-	| okToLooseChanges |
+!TemporaryVariable methodsFor: 'evaluating' stamp: 'NPM 12/30/2021 12:47:47'!
+refresh
 	
-	okToLooseChanges _ self canDiscardEditsOf: codePane.
-	okToLooseChanges ifTrue: [
-		receiverInspectorText disregardUnacceptedEdits.
-		"contextVariableInspectorText disregardUnacceptedEdits" ].
+	| previousValue |
+	previousValue _ lastReadValue.
 	
-	^okToLooseChanges ! !
+	changed _ previousValue ~~ self value.
+	
+	self triggerChangedEvent.
+	
+	! !
 
-!TemporaryVariable methodsFor: 'evaluating' stamp: 'NPM 12/11/2021 13:43:23'!
+!TemporaryVariable methodsFor: 'evaluating' stamp: 'NPM 12/30/2021 12:48:27'!
 value
 
-	^ context debuggerMap namedTempAt: index in: context! !
-
-!TemporaryVariable methodsFor: 'initialization' stamp: 'NPM 12/11/2021 13:18:15'!
-initializeNamed: aName at: anIndex in: aContext 
-
-	name := aName.
-	index := anIndex.
-	context := aContext.! !
-
-!TemporaryVariable class methodsFor: 'instance creation' stamp: 'NPM 12/11/2021 13:17:51'!
-named: aName at: anIndex in: aContext 
+	lastReadValue _ context debuggerMap namedTempAt: index in: context.
 	
+	^ lastReadValue! !
+
+!TemporaryVariable methodsFor: 'events-registering' stamp: 'NPM 12/30/2021 12:44:08'!
+changedEventName
+
+	^ #changed! !
+
+!TemporaryVariable methodsFor: 'events-registering' stamp: 'NPM 12/30/2021 12:44:08'!
+triggerChangedEvent
+	
+	self triggerEvent: self changedEventName! !
+
+!TemporaryVariable methodsFor: 'events-registering' stamp: 'NPM 12/30/2021 12:44:08'!
+whenChangesSend: aMessageSelector to: anObject 
+	
+	self
+		when: self changedEventName
+		send: aMessageSelector
+		to: anObject! !
+
+!TemporaryVariable methodsFor: 'initialization' stamp: 'NPM 12/30/2021 12:49:38'!
+initializeIndex
+
+	index _ context tempNames indexOf: name! !
+
+!TemporaryVariable methodsFor: 'initialization' stamp: 'NPM 12/30/2021 12:49:48'!
+initializeNamed: aName definedIn: aContext 
+
+	name _ aName.
+	context _ aContext.
+	changed _ false.
+	self initializeIndex.! !
+
+!TemporaryVariable methodsFor: 'testing' stamp: 'NPM 12/30/2021 12:43:48'!
+ifChanged: changedBlock ifNotChanged: notChangedBlock 
+	
+	^ changed 
+		ifTrue: changedBlock
+		ifFalse: notChangedBlock! !
+
+!TemporaryVariable methodsFor: 'testing' stamp: 'NPM 12/13/2021 15:50:50'!
+isDefinedIn: aContext 
+	
+	^ context = aContext! !
+
+!TemporaryVariable methodsFor: 'testing' stamp: 'NPM 12/13/2021 15:50:31'!
+isNamed: aName
+
+	^ name = aName! !
+
+!TemporaryVariable class methodsFor: 'instance creation' stamp: 'NPM 12/13/2021 19:29:20'!
+allDefinedIn: aContext 
+	
+	| definingContexstByTemporaryNames |
+	definingContexstByTemporaryNames _ aContext definingContextsByTemporaryNames.
+	
+	^ aContext tempNames collect: [ :temporaryName |
+		self
+			findOrCreateNamed: temporaryName
+			definedIn: (definingContexstByTemporaryNames at: temporaryName) ].! !
+
+!TemporaryVariable class methodsFor: 'instance creation' stamp: 'NPM 12/13/2021 19:14:47'!
+findNamed: aName definedIn: aContext ifNone: noneBlock
+
+	^ self allInstances
+		detect: [ :temporaryVariable | (temporaryVariable isNamed: aName) and: [ temporaryVariable isDefinedIn: aContext ] ]
+		ifNone: noneBlock
+	
+	! !
+
+!TemporaryVariable class methodsFor: 'instance creation' stamp: 'NPM 12/13/2021 19:31:02'!
+findOrCreateNamed: aName definedIn: aContext 
+
+	^ self
+		findNamed: aName
+		definedIn: aContext
+		ifNone: [ self named: aName definedIn: aContext ] 
+	
+	! !
+
+!TemporaryVariable class methodsFor: 'instance creation' stamp: 'NPM 12/27/2021 15:52:25'!
+named: aName definedIn: aContext 
+
 	^ self
 		new
 		initializeNamed: aName
-		at: anIndex
-		in: aContext! !
+		definedIn: aContext! !
+
+!TemporaryVariablesInspector methodsFor: 'accessing' stamp: 'NPM 12/30/2021 12:53:59'!
+context: aMethodContext 
+	
+	context = aMethodContext
+		ifTrue: [
+			self refreshTemporaryVariables ]
+		ifFalse: [
+			context _ aMethodContext.
+			self triggerContextChangedEvent ].! !
+
+!TemporaryVariablesInspector methodsFor: 'accessing' stamp: 'NPM 12/27/2021 16:20:39'!
+temporaryVariables
+	
+	^ TemporaryVariable allDefinedIn: context! !
+
+!TemporaryVariablesInspector methodsFor: 'accessing' stamp: 'NPM 12/30/2021 12:53:59'!
+update
+	
+	self refreshTemporaryVariables
+	! !
+
+!TemporaryVariablesInspector methodsFor: 'events-registering' stamp: 'NPM 12/28/2021 10:49:12'!
+whenContextChangesSend: aMessageSelector to: anObject 
+	
+	self
+		when: self contextChangedEventName
+		send: aMessageSelector
+		to: anObject! !
+
+!TemporaryVariablesInspector methodsFor: 'events-triggering' stamp: 'NPM 12/27/2021 16:18:56'!
+contextChangedEventName
+
+	^ #contextChanged! !
+
+!TemporaryVariablesInspector methodsFor: 'events-triggering' stamp: 'NPM 12/30/2021 14:46:34'!
+refreshTemporaryVariables
+
+	self temporaryVariables do: [ :temporaryVariable | temporaryVariable refresh ].! !
+
+!TemporaryVariablesInspector methodsFor: 'events-triggering' stamp: 'NPM 12/27/2021 16:18:59'!
+triggerContextChangedEvent
+
+	self triggerEvent: self contextChangedEventName! !
 
 !Debugger methodsFor: '*Tools-AdvancedDebugger' stamp: 'NPM 12/11/2021 00:53:33'!
 openFullAdvancedDebuggerLabeled: aLabelString
