@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4913] on 30 December 2021 at 6:38:04 pm'!
+'From Cuis 5.0 [latest update: #4913] on 30 December 2021 at 6:44:11 pm'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 5!
+!provides: 'Tools-AdvancedDebugger' 1 7!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 
@@ -516,3 +516,37 @@ openFullNoSuspendLabel: aString
 
 	self openFullAdvancedDebuggerLabeled: aString.
 	interruptedProcessUI _ UISupervisor newProcessIfUI: interruptedProcess! !
+
+!MethodContext methodsFor: '*Tools-AdvancedDebugger' stamp: 'NPM 12/13/2021 19:26:11'!
+definingContextsByTemporaryNames
+	
+	| contextx |
+	contextx _ OrderedCollection new.
+	self outerContextsDo: [ :ctx | contextx addFirst: ctx ].
+	
+	^ contextx inject: Dictionary new into: [ :d :ctx |
+		
+		ctx tempNames do: [ :n | 
+			
+			
+			d at: n ifAbsentPut: ctx.
+			
+			
+			].
+		
+		
+		d
+		
+		
+		
+		
+		].
+	
+	! !
+
+!DynamicMenuBuilder methodsFor: '*Tools-AdvancedDebugger' stamp: 'NPM 12/30/2021 18:28:41'!
+collectMenuOptions
+
+	items := OrderedCollection new.
+	self classesProvidingMenuOptions do: [ :aClass | items addAll: (aClass soleInstance perform: menuOptionsSelector withPossiblyWrongSizedArguments: {defaultTarget}) ].
+	! !
