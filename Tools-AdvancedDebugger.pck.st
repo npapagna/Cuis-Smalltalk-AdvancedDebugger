@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4913] on 30 December 2021 at 2:47:05 pm'!
+'From Cuis 5.0 [latest update: #4913] on 30 December 2021 at 6:38:04 pm'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 4!
+!provides: 'Tools-AdvancedDebugger' 1 5!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 
@@ -47,7 +47,7 @@ AdvancedDebuggerWindow class
 
 !classDefinition: #TemporaryVariable category: #'Tools-AdvancedDebugger'!
 Object subclass: #TemporaryVariable
-	instanceVariableNames: 'name index context lastReadValue changed'
+	instanceVariableNames: 'name index context lastReadValue changed isPinnedToDebugger'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger'!
@@ -57,7 +57,7 @@ TemporaryVariable class
 
 !classDefinition: #TemporaryVariablesInspector category: #'Tools-AdvancedDebugger'!
 Object subclass: #TemporaryVariablesInspector
-	instanceVariableNames: 'context a'
+	instanceVariableNames: 'context a pinnedTemporaryVariables'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger'!
@@ -108,6 +108,28 @@ for: aTemporaryVariablesInspector
 		new
 		initializeFor: aTemporaryVariablesInspector ! !
 
+!TemporaryVariableMorph methodsFor: 'context menu' stamp: 'NPM 12/30/2021 18:31:50'!
+contextMenu
+		
+	^ (DynamicMenuBuilder
+		buildTitled: temporaryVariable name
+		targeting: temporaryVariable
+		collectingMenuOptionsWith: #temporaryVariableDebuggerMenuFor:)
+		addStayUpIcons;
+		yourself
+		
+! !
+
+!TemporaryVariableMorph methodsFor: 'event handling' stamp: 'NPM 12/30/2021 18:15:06'!
+mouseButton2Activity
+
+	self contextMenu popUpInWorld: self world.! !
+
+!TemporaryVariableMorph methodsFor: 'event handling testing' stamp: 'NPM 12/30/2021 15:41:33'!
+handlesMouseDown: aMouseButtonEvent
+
+	^ true! !
+
 !TemporaryVariableMorph methodsFor: 'events-registering' stamp: 'NPM 12/30/2021 12:51:08'!
 registerToTemporaryVariableEvents
 	
@@ -144,11 +166,18 @@ highlightColor
 		ifChanged: [ Color blue ]
 		ifNotChanged: [ Color black ]! !
 
-!TemporaryVariableMorph methodsFor: 'updating' stamp: 'NPM 12/30/2021 14:29:24'!
+!TemporaryVariableMorph methodsFor: 'updating' stamp: 'NPM 12/30/2021 15:51:42'!
+pinLabel
+	
+	^ temporaryVariable isPinnedToDebugger
+		ifTrue: [ '[pinned]' ]
+		ifFalse: [ '' ]! !
+
+!TemporaryVariableMorph methodsFor: 'updating' stamp: 'NPM 12/30/2021 15:47:09'!
 refresh
 	
 	self firstSubmorph 
-		contents: (temporaryVariable name, ' ', temporaryVariable value displayStringOrText);
+		contents: (self pinLabel, ' ', temporaryVariable name, ' ', temporaryVariable value displayStringOrText);
 		color: self highlightColor.
 		
 	self morphExtent: self firstSubmorph morphExtent! !
@@ -159,6 +188,19 @@ for: aTemporaryVariable
 	^ self
 		newRow
 		initializeFor: aTemporaryVariable ! !
+
+!TemporaryVariableMorph class methodsFor: 'context menu' stamp: 'NPM 12/30/2021 18:31:39'!
+temporaryVariableDebuggerMenuFor: aTemporaryVariable
+	
+	^ {
+		{
+			#itemGroup 	 	-> 		1.
+			#itemOrder  	 	-> 		1.
+			#label  			-> 	(aTemporaryVariable isPinnedToDebugger ifTrue: [ 'Unpin' ] ifFalse: [ 'Pin' ]).
+			#selector       		-> 		#togglePinnedToDebugger.
+		} asDictionary.
+			
+	   }! !
 
 !TemporaryVariablesInspectorMorph methodsFor: 'events-registering' stamp: 'NPM 12/30/2021 14:34:07'!
 registerToTemporaryVariablesInspectorEvents
@@ -174,15 +216,16 @@ initializeOn: aTemporaryVariablesInspector
 	
 	self registerToTemporaryVariablesInspectorEvents.! !
 
-!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 12/30/2021 14:35:45'!
+!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 12/30/2021 18:23:18'!
 reloadTemporaryVariables
 		
 	self removeAllMorphs.
 	
-	temporaryVariablesInspector temporaryVariables do: [ :temporaryVariable |
-		self
-			addMorph: (TemporaryVariableMorph for: temporaryVariable)
-			layoutSpec: (LayoutSpec morphHeightProportionalWidth: 1) ].
+	(temporaryVariablesInspector pinnedTemporaryVariables, temporaryVariablesInspector temporaryVariables)
+		do: [ :temporaryVariable |
+			self
+				addMorph: (TemporaryVariableMorph for: temporaryVariable)
+				layoutSpec: (LayoutSpec morphHeightProportionalWidth: 1) ].
 ! !
 
 !TemporaryVariablesInspectorMorph class methodsFor: 'instance creation' stamp: 'NPM 12/30/2021 14:34:28'!
@@ -254,13 +297,13 @@ buildMorphicWindow
 		addAdjusterAndMorph: self buildLowerPanes proportionalHeight: 0.55;
 		addAdjusterAndMorph: bottomMorph proportionalHeight: 0.2! !
 
-!TemporaryVariable methodsFor: 'evaluating' stamp: 'NPM 12/30/2021 12:47:47'!
+!TemporaryVariable methodsFor: 'evaluating' stamp: 'NPM 12/30/2021 18:10:40'!
 refresh
 	
 	| previousValue |
 	previousValue _ lastReadValue.
 	
-	changed _ previousValue ~~ self value.
+	changed _ previousValue ~= self value.
 	
 	self triggerChangedEvent.
 	
@@ -296,12 +339,14 @@ initializeIndex
 
 	index _ context tempNames indexOf: name! !
 
-!TemporaryVariable methodsFor: 'initialization' stamp: 'NPM 12/30/2021 12:49:48'!
+!TemporaryVariable methodsFor: 'initialization' stamp: 'NPM 12/30/2021 18:14:28'!
 initializeNamed: aName definedIn: aContext 
 
 	name _ aName.
 	context _ aContext.
 	changed _ false.
+	isPinnedToDebugger _ false.
+	
 	self initializeIndex.! !
 
 !TemporaryVariable methodsFor: 'testing' stamp: 'NPM 12/30/2021 12:43:48'!
@@ -320,6 +365,18 @@ isDefinedIn: aContext
 isNamed: aName
 
 	^ name = aName! !
+
+!TemporaryVariable methodsFor: 'as yet unclassified' stamp: 'NPM 12/30/2021 17:58:05'!
+isPinnedToDebugger
+	
+	^ isPinnedToDebugger ! !
+
+!TemporaryVariable methodsFor: 'as yet unclassified' stamp: 'NPM 12/30/2021 17:58:05'!
+togglePinnedToDebugger
+
+	isPinnedToDebugger _ isPinnedToDebugger not.
+	
+	self triggerChangedEvent.! !
 
 !TemporaryVariable class methodsFor: 'instance creation' stamp: 'NPM 12/13/2021 19:29:20'!
 allDefinedIn: aContext 
@@ -359,20 +416,19 @@ named: aName definedIn: aContext
 		initializeNamed: aName
 		definedIn: aContext! !
 
-!TemporaryVariablesInspector methodsFor: 'accessing' stamp: 'NPM 12/30/2021 12:53:59'!
+!TemporaryVariablesInspector methodsFor: 'accessing' stamp: 'NPM 12/30/2021 18:33:34'!
 context: aMethodContext 
 	
 	context = aMethodContext
-		ifTrue: [
-			self refreshTemporaryVariables ]
-		ifFalse: [
-			context _ aMethodContext.
-			self triggerContextChangedEvent ].! !
+		ifTrue: [ self refreshAllTemporaryVariables ]
+		ifFalse: [ self loadTemporaryVariablesFrom: aMethodContext ].! !
 
-!TemporaryVariablesInspector methodsFor: 'accessing' stamp: 'NPM 12/27/2021 16:20:39'!
-temporaryVariables
+!TemporaryVariablesInspector methodsFor: 'accessing' stamp: 'NPM 12/30/2021 15:55:38'!
+initialize
+
+	super initialize.
 	
-	^ TemporaryVariable allDefinedIn: context! !
+	pinnedTemporaryVariables _ OrderedCollection new.! !
 
 !TemporaryVariablesInspector methodsFor: 'accessing' stamp: 'NPM 12/30/2021 12:53:59'!
 update
@@ -393,7 +449,7 @@ contextChangedEventName
 
 	^ #contextChanged! !
 
-!TemporaryVariablesInspector methodsFor: 'events-triggering' stamp: 'NPM 12/30/2021 14:46:34'!
+!TemporaryVariablesInspector methodsFor: 'events-triggering' stamp: 'NPM 12/30/2021 18:33:47'!
 refreshTemporaryVariables
 
 	self temporaryVariables do: [ :temporaryVariable | temporaryVariable refresh ].! !
@@ -402,6 +458,46 @@ refreshTemporaryVariables
 triggerContextChangedEvent
 
 	self triggerEvent: self contextChangedEventName! !
+
+!TemporaryVariablesInspector methodsFor: 'temporary variables' stamp: 'NPM 12/30/2021 18:21:35'!
+loadTemporaryVariablesFrom: aMethodContext
+
+	self initializePinnedTemporaryVariables.
+	
+	context _ aMethodContext.
+	self triggerContextChangedEvent! !
+
+!TemporaryVariablesInspector methodsFor: 'temporary variables' stamp: 'NPM 12/30/2021 18:20:42'!
+temporaryVariables
+	
+	context ifNil: [ ^ OrderedCollection new ].
+	
+	^ TemporaryVariable allDefinedIn: context! !
+
+!TemporaryVariablesInspector methodsFor: 'temporary variables - pinned' stamp: 'NPM 12/30/2021 18:21:45'!
+initializePinnedTemporaryVariables
+
+	pinnedTemporaryVariables _ self temporaryVariables
+		select: [ :temporaryVariable | temporaryVariable isPinnedToDebugger ].
+	
+	self refreshPinnedTemporaryVariables! !
+
+!TemporaryVariablesInspector methodsFor: 'temporary variables - pinned' stamp: 'NPM 12/30/2021 17:51:45'!
+pinnedTemporaryVariables
+	
+	^ pinnedTemporaryVariables difference: self temporaryVariables! !
+
+!TemporaryVariablesInspector methodsFor: 'temporary variables - pinned' stamp: 'NPM 12/30/2021 18:07:57'!
+refreshPinnedTemporaryVariables
+	
+	pinnedTemporaryVariables do: [ :temporaryVariable | temporaryVariable refresh ]! !
+
+!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 12/30/2021 18:34:09'!
+refreshAllTemporaryVariables
+	
+	self
+		refreshPinnedTemporaryVariables;
+		refreshTemporaryVariables! !
 
 !Debugger methodsFor: '*Tools-AdvancedDebugger' stamp: 'NPM 12/11/2021 00:53:33'!
 openFullAdvancedDebuggerLabeled: aLabelString

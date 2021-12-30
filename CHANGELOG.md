@@ -10,6 +10,7 @@ project does not follow [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * New temporary variables inspector.
 * Temporary variables refresh when restarting contexts, stepping into/over message sends, or stepping through blocks.
 * Highlight temporary variables when they change.
+* Support for pinning temporary variables (accessed through the temporary variable context menu).
 
 ## Changed
 * Uses the new `AdvancedDebuggerWindow` instead of the built-in `DebuggerWindow` for opening the debugger.  
