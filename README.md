@@ -1,2 +1,4 @@
 # Cuis-Smalltalk-Debugger
-Better and improved debugger for Cuis Smalltalk
+Improved debugger for Cuis Smalltalk.
+
+A release has not been cut yet, check the [Changelog](CHANGELOG.md) for the current implemented features.
