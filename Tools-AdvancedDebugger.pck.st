@@ -1,13 +1,23 @@
-'From Cuis 5.0 [latest update: #4913] on 30 December 2021 at 6:44:11 pm'!
+'From Cuis 5.0 [latest update: #4913] on 30 January 2022 at 11:41:50 am'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 7!
+!provides: 'Tools-AdvancedDebugger' 1 9!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 
 
+!classDefinition: #WatchExpressionEditor category: #'Tools-AdvancedDebugger'!
+Workspace subclass: #WatchExpressionEditor
+	instanceVariableNames: 'context acceptedWatchExpression acceptedWatchName'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger'!
+!classDefinition: 'WatchExpressionEditor class' category: #'Tools-AdvancedDebugger'!
+WatchExpressionEditor class
+	instanceVariableNames: ''!
+
 !classDefinition: #ContextVariablesInspectorToTemporaryVariablesInspectorAdapter category: #'Tools-AdvancedDebugger-UI'!
 ContextVariablesInspector subclass: #ContextVariablesInspectorToTemporaryVariablesInspectorAdapter
-	instanceVariableNames: 'aDContextVariablesInspector'
+	instanceVariableNames: 'temporaryVariablesInspector'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger-UI'!
@@ -15,19 +25,29 @@ ContextVariablesInspector subclass: #ContextVariablesInspectorToTemporaryVariabl
 ContextVariablesInspectorToTemporaryVariablesInspectorAdapter class
 	instanceVariableNames: ''!
 
-!classDefinition: #TemporaryVariableMorph category: #'Tools-AdvancedDebugger-UI'!
-LayoutMorph subclass: #TemporaryVariableMorph
-	instanceVariableNames: 'temporaryVariable'
+!classDefinition: #DebuggerExpressionMorph category: #'Tools-AdvancedDebugger-UI'!
+LayoutMorph subclass: #DebuggerExpressionMorph
+	instanceVariableNames: 'debuggerExpression'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger-UI'!
-!classDefinition: 'TemporaryVariableMorph class' category: #'Tools-AdvancedDebugger-UI'!
-TemporaryVariableMorph class
+!classDefinition: 'DebuggerExpressionMorph class' category: #'Tools-AdvancedDebugger-UI'!
+DebuggerExpressionMorph class
+	instanceVariableNames: ''!
+
+!classDefinition: #WatchExpressionMorph category: #'Tools-AdvancedDebugger-UI'!
+DebuggerExpressionMorph subclass: #WatchExpressionMorph
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger-UI'!
+!classDefinition: 'WatchExpressionMorph class' category: #'Tools-AdvancedDebugger-UI'!
+WatchExpressionMorph class
 	instanceVariableNames: ''!
 
 !classDefinition: #TemporaryVariablesInspectorMorph category: #'Tools-AdvancedDebugger-UI'!
 LayoutMorph subclass: #TemporaryVariablesInspectorMorph
-	instanceVariableNames: 'temporaryVariablesInspector'
+	instanceVariableNames: 'temporaryVariablesInspector temporaryVariablesMorph'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger-UI'!
@@ -45,9 +65,29 @@ DebuggerWindow subclass: #AdvancedDebuggerWindow
 AdvancedDebuggerWindow class
 	instanceVariableNames: ''!
 
+!classDefinition: #WatchExpressionEditorWindow category: #'Tools-AdvancedDebugger-UI'!
+SystemWindow subclass: #WatchExpressionEditorWindow
+	instanceVariableNames: 'acceptBlock resultLabel nameInput'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger-UI'!
+!classDefinition: 'WatchExpressionEditorWindow class' category: #'Tools-AdvancedDebugger-UI'!
+WatchExpressionEditorWindow class
+	instanceVariableNames: ''!
+
+!classDefinition: #DebuggerExpression category: #'Tools-AdvancedDebugger'!
+Object subclass: #DebuggerExpression
+	instanceVariableNames: 'name context lastReadValue changed isPinnedToDebugger'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger'!
+!classDefinition: 'DebuggerExpression class' category: #'Tools-AdvancedDebugger'!
+DebuggerExpression class
+	instanceVariableNames: ''!
+
 !classDefinition: #TemporaryVariable category: #'Tools-AdvancedDebugger'!
-Object subclass: #TemporaryVariable
-	instanceVariableNames: 'name index context lastReadValue changed isPinnedToDebugger'
+DebuggerExpression subclass: #TemporaryVariable
+	instanceVariableNames: 'index'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger'!
@@ -55,9 +95,19 @@ Object subclass: #TemporaryVariable
 TemporaryVariable class
 	instanceVariableNames: ''!
 
+!classDefinition: #WatchExpression category: #'Tools-AdvancedDebugger'!
+DebuggerExpression subclass: #WatchExpression
+	instanceVariableNames: 'expressionBlock expression'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger'!
+!classDefinition: 'WatchExpression class' category: #'Tools-AdvancedDebugger'!
+WatchExpression class
+	instanceVariableNames: ''!
+
 !classDefinition: #TemporaryVariablesInspector category: #'Tools-AdvancedDebugger'!
 Object subclass: #TemporaryVariablesInspector
-	instanceVariableNames: 'context a pinnedTemporaryVariables'
+	instanceVariableNames: 'context a pinnedTemporaryVariables watches'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger'!
@@ -66,12 +116,12 @@ TemporaryVariablesInspector class
 	instanceVariableNames: ''!
 
 
-!TemporaryVariable methodsFor: 'accessing' stamp: 'NPM 12/11/2021 13:18:27'!
+!DebuggerExpression methodsFor: 'accessing' stamp: 'NPM 1/5/2022 02:20:14'!
 name
 
 	^ name! !
 
-!TemporaryVariable methodsFor: 'printing' stamp: 'NPM 12/30/2021 12:46:55'!
+!DebuggerExpression methodsFor: 'printing' stamp: 'NPM 1/5/2022 02:20:14'!
 printOn: aStream
 
 	aStream
@@ -82,24 +132,94 @@ printOn: aStream
 		nextPut: $>
 		! !
 
-!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'accessing' stamp: 'NPM 12/30/2021 14:38:24'!
+!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/7/2022 22:19:32'!
+actualWatchExpression
+
+	^ DebuggerExpression
+		watchNamed: acceptedWatchName
+		toEvaluate: self actualContents
+		in: context! !
+
+!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/7/2022 22:19:41'!
+applyEdits
+	
+	acceptedWatchExpression
+		renameTo: acceptedWatchName
+		andChangeExpressionTo: self actualContents .! !
+
+!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/30/2022 11:24:48'!
+context: aMethodContext 
+
+	context _ aMethodContext.
+
+	aMethodContext tempNames withIndexDo: [ :temporaryName :temporaryIndex| 
+		bindings
+			at: temporaryName
+			put: (aMethodContext debuggerMap namedTempAt: temporaryIndex in: aMethodContext) ]! !
+
+!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/1/2022 12:49:38'!
+doItContext
+	"Answer the object that should be informed of the result of evaluating a
+	text selection."
+
+	^ context ! !
+
+!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/4/2022 11:40:10'!
+doItReceiver
+	"Answer the object that should be informed of the result of evaluating a
+	text selection."
+
+	^ context receiver! !
+
+!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/10/2022 17:19:40'!
+renameWatch: newName 
+	
+	acceptedWatchName _ newName.! !
+
+!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/7/2022 22:19:48'!
+watchExpression: aWatchExpression 
+	
+	
+	acceptedWatchExpression _ aWatchExpression.
+	acceptedWatchName _ acceptedWatchExpression name.
+	
+	self context: aWatchExpression context.
+	self actualContents: aWatchExpression expression.! !
+
+!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/7/2022 22:19:32'!
+watchName
+	
+	^ acceptedWatchName! !
+
+!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'accessing' stamp: 'NPM 1/7/2022 22:05:37'!
 object: aMethodContext 
 	
 	super object: aMethodContext.
 	
-	aDContextVariablesInspector context: aMethodContext.! !
+	temporaryVariablesInspector context: aMethodContext.! !
 
-!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'accessing' stamp: 'NPM 12/30/2021 14:38:05'!
+!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'accessing' stamp: 'NPM 1/7/2022 22:05:37'!
 update
 	
 	super update.
 	
-	aDContextVariablesInspector update! !
+	temporaryVariablesInspector update! !
 
-!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'initialization' stamp: 'NPM 12/28/2021 10:51:17'!
-initializeFor: anADContextVariablesInspector 
+!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'initialization' stamp: 'NPM 1/10/2022 17:30:05'!
+initializeFor: aTemporaryVariablesInspector 
 	
-	aDContextVariablesInspector := anADContextVariablesInspector.! !
+	temporaryVariablesInspector := aTemporaryVariablesInspector.! !
+
+!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'watches' stamp: 'NPM 1/7/2022 22:05:37'!
+addWatchToEvaluate: aSmalltalkExpression 
+	
+	| watch |
+	watch _ DebuggerExpression
+		watchNamed: aSmalltalkExpression
+		toEvaluate: aSmalltalkExpression
+		in: temporaryVariablesInspector context.
+		
+	temporaryVariablesInspector addWatch: watch! !
 
 !ContextVariablesInspectorToTemporaryVariablesInspectorAdapter class methodsFor: 'instance creation' stamp: 'NPM 12/30/2021 14:39:53'!
 for: aTemporaryVariablesInspector 
@@ -108,89 +228,89 @@ for: aTemporaryVariablesInspector
 		new
 		initializeFor: aTemporaryVariablesInspector ! !
 
-!TemporaryVariableMorph methodsFor: 'context menu' stamp: 'NPM 12/30/2021 18:31:50'!
+!DebuggerExpressionMorph methodsFor: 'context menu' stamp: 'NPM 1/5/2022 13:30:09'!
 contextMenu
 		
 	^ (DynamicMenuBuilder
-		buildTitled: temporaryVariable name
-		targeting: temporaryVariable
-		collectingMenuOptionsWith: #temporaryVariableDebuggerMenuFor:)
+		buildTitled: debuggerExpression kind, ': ', debuggerExpression name
+		targeting: debuggerExpression
+		collectingMenuOptionsWith: #debuggerExpressionMenuFor:)
 		addStayUpIcons;
 		yourself
 		
 ! !
 
-!TemporaryVariableMorph methodsFor: 'event handling' stamp: 'NPM 12/30/2021 18:15:06'!
+!DebuggerExpressionMorph methodsFor: 'event handling' stamp: 'NPM 12/30/2021 18:15:06'!
 mouseButton2Activity
 
 	self contextMenu popUpInWorld: self world.! !
 
-!TemporaryVariableMorph methodsFor: 'event handling testing' stamp: 'NPM 12/30/2021 15:41:33'!
+!DebuggerExpressionMorph methodsFor: 'event handling testing' stamp: 'NPM 12/30/2021 15:41:33'!
 handlesMouseDown: aMouseButtonEvent
 
 	^ true! !
 
-!TemporaryVariableMorph methodsFor: 'events-registering' stamp: 'NPM 12/30/2021 12:51:08'!
-registerToTemporaryVariableEvents
+!DebuggerExpressionMorph methodsFor: 'events-registering' stamp: 'NPM 1/5/2022 13:29:24'!
+registerToDebuggerExpressionEvents
 	
-	temporaryVariable
+	debuggerExpression
 		whenChangesSend: #refresh
 		to: self! !
 
-!TemporaryVariableMorph methodsFor: 'initialization' stamp: 'NPM 12/30/2021 12:24:30'!
+!DebuggerExpressionMorph methodsFor: 'initialization' stamp: 'NPM 12/30/2021 12:24:30'!
 defaultColor
 
 	^ Color transparent! !
 
-!TemporaryVariableMorph methodsFor: 'initialization' stamp: 'NPM 12/30/2021 12:51:08'!
-initializeFor: aTemporaryVariable 
+!DebuggerExpressionMorph methodsFor: 'initialization' stamp: 'NPM 1/5/2022 13:29:24'!
+initializeFor: aDebuggerExpression 
 
-	temporaryVariable _ aTemporaryVariable.
+	debuggerExpression _ aDebuggerExpression.
 	
 	self
 		initializeSubmorphs;
-		registerToTemporaryVariableEvents;
+		registerToDebuggerExpressionEvents;
 		refresh.! !
 
-!TemporaryVariableMorph methodsFor: 'initialization' stamp: 'NPM 12/30/2021 12:25:58'!
+!DebuggerExpressionMorph methodsFor: 'initialization' stamp: 'NPM 12/30/2021 12:25:58'!
 initializeSubmorphs
 
 	self
 		addMorph: (LabelMorph contents: '')
 		layoutSpec: (LayoutSpec morphHeightProportionalWidth: 1)! !
 
-!TemporaryVariableMorph methodsFor: 'updating' stamp: 'NPM 12/30/2021 14:29:24'!
+!DebuggerExpressionMorph methodsFor: 'updating' stamp: 'NPM 1/5/2022 13:29:09'!
 highlightColor
 
-	^ temporaryVariable
+	^ debuggerExpression
 		ifChanged: [ Color blue ]
 		ifNotChanged: [ Color black ]! !
 
-!TemporaryVariableMorph methodsFor: 'updating' stamp: 'NPM 12/30/2021 15:51:42'!
+!DebuggerExpressionMorph methodsFor: 'updating' stamp: 'NPM 1/5/2022 13:29:09'!
 pinLabel
 	
-	^ temporaryVariable isPinnedToDebugger
+	^ debuggerExpression isPinnedToDebugger
 		ifTrue: [ '[pinned]' ]
 		ifFalse: [ '' ]! !
 
-!TemporaryVariableMorph methodsFor: 'updating' stamp: 'NPM 12/30/2021 15:47:09'!
+!DebuggerExpressionMorph methodsFor: 'updating' stamp: 'NPM 1/5/2022 13:29:09'!
 refresh
 	
 	self firstSubmorph 
-		contents: (self pinLabel, ' ', temporaryVariable name, ' ', temporaryVariable value displayStringOrText);
+		contents: (self pinLabel, ' ', debuggerExpression name, ' ', debuggerExpression value displayStringOrText);
 		color: self highlightColor.
 		
 	self morphExtent: self firstSubmorph morphExtent! !
 
-!TemporaryVariableMorph class methodsFor: 'instance creation' stamp: 'NPM 12/30/2021 12:15:37'!
-for: aTemporaryVariable 
+!DebuggerExpressionMorph class methodsFor: 'instance creation' stamp: 'NPM 1/5/2022 13:28:57'!
+for: aDebuggerExpression 
 	
 	^ self
 		newRow
-		initializeFor: aTemporaryVariable ! !
+		initializeFor: aDebuggerExpression ! !
 
-!TemporaryVariableMorph class methodsFor: 'context menu' stamp: 'NPM 12/30/2021 18:31:39'!
-temporaryVariableDebuggerMenuFor: aTemporaryVariable
+!DebuggerExpressionMorph class methodsFor: 'context menu' stamp: 'NPM 1/5/2022 13:30:01'!
+debuggerExpressionMenuFor: aTemporaryVariable
 	
 	^ {
 		{
@@ -202,6 +322,34 @@ temporaryVariableDebuggerMenuFor: aTemporaryVariable
 			
 	   }! !
 
+!DebuggerExpressionMorph class methodsFor: 'as yet unclassified' stamp: 'NPM 1/5/2022 13:33:14'!
+forWatch: aWatchExpression 
+	
+	^ WatchExpressionMorph for: aWatchExpression! !
+
+!WatchExpressionMorph methodsFor: 'actions' stamp: 'NPM 1/10/2022 17:23:52'!
+edit
+	
+	WatchExpressionEditorWindow openToEdit: debuggerExpression ! !
+
+!WatchExpressionMorph methodsFor: 'context menu' stamp: 'NPM 1/7/2022 17:57:22'!
+contextMenu
+
+	^ super contextMenu
+		addLine;
+		add: 'Edit' target: self action: #edit;
+		add: 'Remove' target: debuggerExpression action: #remove;
+		yourself! !
+
+!WatchExpressionMorph methodsFor: 'events-registering' stamp: 'NPM 1/30/2022 11:27:13'!
+registerToDebuggerExpressionEvents
+
+	super registerToDebuggerExpressionEvents.
+	
+"	debuggerExpression
+		whenRenamedSend: #refresh
+		to: self."! !
+
 !TemporaryVariablesInspectorMorph methodsFor: 'events-registering' stamp: 'NPM 12/30/2021 14:34:07'!
 registerToTemporaryVariablesInspectorEvents
 
@@ -209,24 +357,67 @@ registerToTemporaryVariablesInspectorEvents
 		whenContextChangesSend: #reloadTemporaryVariables
 		to: self! !
 
-!TemporaryVariablesInspectorMorph methodsFor: 'initialization' stamp: 'NPM 12/30/2021 14:34:07'!
+!TemporaryVariablesInspectorMorph methodsFor: 'initialization' stamp: 'NPM 1/6/2022 20:22:21'!
 initializeOn: aTemporaryVariablesInspector
 
 	temporaryVariablesInspector _ aTemporaryVariablesInspector.
+	temporaryVariablesMorph _ LayoutMorph newColumn.
 	
-	self registerToTemporaryVariablesInspectorEvents.! !
+	self
+		addMorphUseAll: temporaryVariablesMorph;
+		registerToTemporaryVariablesInspectorEvents.! !
 
-!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 12/30/2021 18:23:18'!
+!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 1/5/2022 13:31:47'!
 reloadTemporaryVariables
 		
-	self removeAllMorphs.
-	
+	temporaryVariablesMorph removeAllMorphs.
+
 	(temporaryVariablesInspector pinnedTemporaryVariables, temporaryVariablesInspector temporaryVariables)
 		do: [ :temporaryVariable |
-			self
-				addMorph: (TemporaryVariableMorph for: temporaryVariable)
+			temporaryVariablesMorph
+				addMorph: (DebuggerExpressionMorph for: temporaryVariable)
 				layoutSpec: (LayoutSpec morphHeightProportionalWidth: 1) ].
-! !
+			
+	temporaryVariablesInspector watchExpressions
+		do: [ :watchExpression |
+			temporaryVariablesMorph
+				addMorph: (DebuggerExpressionMorph forWatch: watchExpression)
+				layoutSpec: (LayoutSpec morphHeightProportionalWidth: 1) ].
+
+	! !
+
+!TemporaryVariablesInspectorMorph methodsFor: 'as yet unclassified' stamp: 'NPM 1/6/2022 20:24:56'!
+contextMenu
+	
+	^ (DynamicMenuBuilder
+		buildTitled: 'Temporary variables'
+		targeting: self
+		collectingMenuOptionsWith: #temporaryVariablesInspectorContextMenuFor:)
+		addStayUpIcons;
+		yourself
+		! !
+
+!TemporaryVariablesInspectorMorph methodsFor: 'as yet unclassified' stamp: 'NPM 1/10/2022 17:24:03'!
+createWatchExpression
+	
+	| newWatchExpression editor |
+	newWatchExpression _ DebuggerExpression watchTemplateFor: temporaryVariablesInspector context.
+	
+	editor _ WatchExpressionEditorWindow
+		openToAdd: newWatchExpression
+		onAcceptDo: [ temporaryVariablesInspector addWatch: newWatchExpression ].
+		
+	editor openInWorld! !
+
+!TemporaryVariablesInspectorMorph methodsFor: 'as yet unclassified' stamp: 'NPM 1/6/2022 20:22:55'!
+handlesMouseDown: aMouseButtonEvent
+
+	^ true! !
+
+!TemporaryVariablesInspectorMorph methodsFor: 'as yet unclassified' stamp: 'NPM 1/6/2022 20:23:24'!
+mouseButton2Activity
+
+	self contextMenu popUpInWorld: self world.! !
 
 !TemporaryVariablesInspectorMorph class methodsFor: 'instance creation' stamp: 'NPM 12/30/2021 14:34:28'!
 on: aTemporaryVariablesInspector
@@ -236,6 +427,19 @@ on: aTemporaryVariablesInspector
 		initializeOn: aTemporaryVariablesInspector
 
 	! !
+
+!TemporaryVariablesInspectorMorph class methodsFor: 'instance creation' stamp: 'NPM 1/6/2022 20:26:16'!
+temporaryVariablesInspectorContextMenuFor: aTemporaryVariablesInspectorMorph
+
+	^ {
+		{
+			#itemGroup 	 	-> 		1.
+			#itemOrder  	 	-> 		1.
+			#label  			-> 	'Add watch...'.
+			#selector       		-> 		#createWatchExpression.
+		} asDictionary.
+			
+	   }! !
 
 !AdvancedDebuggerWindow methodsFor: 'GUI building' stamp: 'NPM 12/30/2021 14:41:55'!
 buildMorphicWindow
@@ -297,7 +501,151 @@ buildMorphicWindow
 		addAdjusterAndMorph: self buildLowerPanes proportionalHeight: 0.55;
 		addAdjusterAndMorph: bottomMorph proportionalHeight: 0.2! !
 
-!TemporaryVariable methodsFor: 'evaluating' stamp: 'NPM 12/30/2021 18:10:40'!
+!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/6/2022 20:17:35'!
+buildAcceptButton
+
+	^ PluggableButtonMorph model: self action: #accept label: 'Accept'! !
+
+!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/6/2022 20:17:42'!
+buildCancelButton
+
+	^ PluggableButtonMorph model: self action: #cancel label: 'Cancel'! !
+
+!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/6/2022 21:05:14'!
+buildLabel: aLabel
+
+	^ (LabelMorph contents: aLabel) emphasis: 1! !
+
+!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/30/2022 11:19:00'!
+buildMorphicCodePane
+
+	^ (TextModelMorph withModel: model)
+		askBeforeDiscardingEdits: false;
+		"NPM: Refresh actual contents because model always have an expression (either a template or an actual expression if an existing watch is being edited).
+		 If I don't do this, code will not be sytled the first time the window is opened."
+		updateActualContents ! !
+
+!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/6/2022 21:23:16'!
+buildMorphicWindow
+
+	resultLabel _ LabelMorph contents: ''.
+
+	self layoutMorph
+		addMorphKeepMorphHeight: (self buildLabel:  'Name');
+		addMorph: self buildNameInput fixedHeight: self defaultButtonPaneHeight;
+		addMorphKeepMorphHeight: (self buildLabel:  'Expression');
+		addMorphUseAll: self buildMorphicCodePane;
+		addMorphKeepMorphHeight: (self buildLabel:  'Result (live updated)');
+		addMorph: resultLabel fixedHeight: (self defaultButtonPaneHeight * 2);
+		addMorph: self buildToolbar fixedHeight: self defaultButtonPaneHeight.
+		
+	! !
+
+!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/7/2022 17:46:34'!
+buildNameInput
+
+	^ nameInput _ (TextModelMorph textProvider: model textGetter: #watchName textSetter: #renameWatch:) askBeforeDiscardingEdits: false! !
+
+!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/6/2022 20:32:30'!
+buildToolbar
+	
+	^ LayoutMorph newRow
+		addMorph: self buildAcceptButton;
+		addMorph: self buildCancelButton! !
+
+!WatchExpressionEditorWindow methodsFor: 'actions' stamp: 'NPM 1/10/2022 17:28:57'!
+accept
+	
+	nameInput editor acceptContents.
+	model applyEdits.
+	acceptBlock value.
+	
+	self closeBoxHit.
+! !
+
+!WatchExpressionEditorWindow methodsFor: 'actions' stamp: 'NPM 1/4/2022 10:48:28'!
+cancel
+
+	 self closeBoxHit! !
+
+!WatchExpressionEditorWindow methodsFor: 'initialization' stamp: 'NPM 1/10/2022 17:28:33'!
+acceptBlock: aBlock 
+	
+	acceptBlock _ aBlock ! !
+
+!WatchExpressionEditorWindow methodsFor: 'stepping' stamp: 'NPM 1/7/2022 22:18:32'!
+stepAt: millisecondSinceLast
+
+	| result |
+	result _ [ 
+		[ model actualWatchExpression value displayStringOrText ]
+			valueWithin: 500 milliSeconds
+			onTimeout: [  'evaluation timed out' ] ]
+		on: Error
+		do: [ 'evaluation failed' ].
+		
+	resultLabel contents: result 
+	
+	! !
+
+!WatchExpressionEditorWindow methodsFor: 'stepping' stamp: 'NPM 1/6/2022 21:22:24'!
+stepTime
+
+	^ 150 "milliseconds"! !
+
+!WatchExpressionEditorWindow methodsFor: 'stepping' stamp: 'NPM 1/6/2022 21:15:00'!
+wantsSteps
+	"Return true if the receiver wants to its #step or #stepAt: methods be run ALL THE TIME.
+	Morphs that send #startStepping and #stopStepping at appropriate times (i.e. when they are already in the world!!) don't need to answer true to this message"
+
+	^true! !
+
+!WatchExpressionEditorWindow class methodsFor: 'instance creation' stamp: 'NPM 1/10/2022 17:25:35'!
+open: aWatchExpression label: aLabel onAcceptDo: acceptBlock
+	
+	^ (self open: (WatchExpressionEditor new watchExpression: aWatchExpression) label: aLabel)
+		acceptBlock: acceptBlock! !
+
+!WatchExpressionEditorWindow class methodsFor: 'instance creation' stamp: 'NPM 1/10/2022 17:25:30'!
+openToAdd: aWatchExpression onAcceptDo: acceptBlock
+
+	^ self
+		open: aWatchExpression
+		label:  'Add Watch Expression'
+		onAcceptDo: acceptBlock! !
+
+!WatchExpressionEditorWindow class methodsFor: 'instance creation' stamp: 'NPM 1/10/2022 17:25:17'!
+openToEdit: aWatchExpression
+
+	^ self
+		open: aWatchExpression
+		label:  'Edit Watch Expression'
+		onAcceptDo: []! !
+
+!WatchExpressionEditorWindow class methodsFor: 'menu' stamp: 'NPM 1/6/2022 20:11:38'!
+smalltalkEditorMenuOptions
+
+	^`{
+			{
+				#itemGroup 		-> 		11.
+				#itemOrder 		-> 		11.
+				#label 			-> 		'Add to watches'.
+				#selector 		-> 		#addWatchFromSelection.
+			} asDictionary.
+			
+		}`! !
+
+!DebuggerExpression methodsFor: 'accessing' stamp: 'NPM 1/5/2022 11:30:05'!
+kind
+	
+	self subclassResponsibility! !
+
+!DebuggerExpression methodsFor: 'evaluating' stamp: 'NPM 1/5/2022 02:35:21'!
+read
+
+	self subclassResponsibility ! !
+
+!DebuggerExpression methodsFor: 'evaluating' stamp: 'NPM 1/5/2022 02:20:14'!
 refresh
 	
 	| previousValue |
@@ -309,24 +657,24 @@ refresh
 	
 	! !
 
-!TemporaryVariable methodsFor: 'evaluating' stamp: 'NPM 12/30/2021 12:48:27'!
+!DebuggerExpression methodsFor: 'evaluating' stamp: 'NPM 1/5/2022 02:35:21'!
 value
 
-	lastReadValue _ context debuggerMap namedTempAt: index in: context.
+	lastReadValue _ self read.
 	
 	^ lastReadValue! !
 
-!TemporaryVariable methodsFor: 'events-registering' stamp: 'NPM 12/30/2021 12:44:08'!
+!DebuggerExpression methodsFor: 'events-registering' stamp: 'NPM 1/5/2022 02:20:14'!
 changedEventName
 
 	^ #changed! !
 
-!TemporaryVariable methodsFor: 'events-registering' stamp: 'NPM 12/30/2021 12:44:08'!
+!DebuggerExpression methodsFor: 'events-registering' stamp: 'NPM 1/5/2022 02:20:14'!
 triggerChangedEvent
 	
 	self triggerEvent: self changedEventName! !
 
-!TemporaryVariable methodsFor: 'events-registering' stamp: 'NPM 12/30/2021 12:44:08'!
+!DebuggerExpression methodsFor: 'events-registering' stamp: 'NPM 1/5/2022 02:20:14'!
 whenChangesSend: aMessageSelector to: anObject 
 	
 	self
@@ -334,53 +682,83 @@ whenChangesSend: aMessageSelector to: anObject
 		send: aMessageSelector
 		to: anObject! !
 
-!TemporaryVariable methodsFor: 'initialization' stamp: 'NPM 12/30/2021 12:49:38'!
-initializeIndex
-
-	index _ context tempNames indexOf: name! !
-
-!TemporaryVariable methodsFor: 'initialization' stamp: 'NPM 12/30/2021 18:14:28'!
+!DebuggerExpression methodsFor: 'initialization' stamp: 'NPM 1/7/2022 22:06:39'!
 initializeNamed: aName definedIn: aContext 
 
 	name _ aName.
 	context _ aContext.
 	changed _ false.
-	isPinnedToDebugger _ false.
-	
-	self initializeIndex.! !
+	isPinnedToDebugger _ false.! !
 
-!TemporaryVariable methodsFor: 'testing' stamp: 'NPM 12/30/2021 12:43:48'!
-ifChanged: changedBlock ifNotChanged: notChangedBlock 
-	
-	^ changed 
-		ifTrue: changedBlock
-		ifFalse: notChangedBlock! !
-
-!TemporaryVariable methodsFor: 'testing' stamp: 'NPM 12/13/2021 15:50:50'!
-isDefinedIn: aContext 
-	
-	^ context = aContext! !
-
-!TemporaryVariable methodsFor: 'testing' stamp: 'NPM 12/13/2021 15:50:31'!
-isNamed: aName
-
-	^ name = aName! !
-
-!TemporaryVariable methodsFor: 'as yet unclassified' stamp: 'NPM 12/30/2021 17:58:05'!
+!DebuggerExpression methodsFor: 'pinning to debugger' stamp: 'NPM 1/5/2022 02:20:14'!
 isPinnedToDebugger
 	
 	^ isPinnedToDebugger ! !
 
-!TemporaryVariable methodsFor: 'as yet unclassified' stamp: 'NPM 12/30/2021 17:58:05'!
+!DebuggerExpression methodsFor: 'pinning to debugger' stamp: 'NPM 1/5/2022 02:20:14'!
 togglePinnedToDebugger
 
 	isPinnedToDebugger _ isPinnedToDebugger not.
 	
 	self triggerChangedEvent.! !
 
-!TemporaryVariable class methodsFor: 'instance creation' stamp: 'NPM 12/13/2021 19:29:20'!
-allDefinedIn: aContext 
+!DebuggerExpression methodsFor: 'testing' stamp: 'NPM 1/5/2022 02:20:14'!
+ifChanged: changedBlock ifNotChanged: notChangedBlock 
 	
+	^ changed 
+		ifTrue: changedBlock
+		ifFalse: notChangedBlock! !
+
+!DebuggerExpression methodsFor: 'testing' stamp: 'NPM 1/5/2022 02:20:14'!
+isNamed: aName
+
+	^ name = aName! !
+
+!DebuggerExpression class methodsFor: 'instance creation' stamp: 'NPM 1/5/2022 02:44:44'!
+temporaryVariablesDefinedIn: aContext 
+	
+	^ TemporaryVariable allDefinedIn: aContext! !
+
+!DebuggerExpression class methodsFor: 'instance creation' stamp: 'NPM 1/5/2022 18:00:12'!
+watchNamed: aName toEvaluate: aBlock in: aContext  
+	
+	^ WatchExpression named: aName toEvaluate: aBlock in: aContext! !
+
+!DebuggerExpression class methodsFor: 'instance creation' stamp: 'NPM 1/7/2022 22:08:24'!
+watchTemplateFor: aContext
+
+	^ WatchExpression templateFor: aContext! !
+
+!TemporaryVariable methodsFor: 'evaluating' stamp: 'NPM 1/5/2022 02:35:21'!
+read
+
+	^ context debuggerMap namedTempAt: index in: context.! !
+
+!TemporaryVariable methodsFor: 'initialization' stamp: 'NPM 1/5/2022 02:21:02'!
+initializeIndex
+
+	index _ context tempNames indexOf: name! !
+
+!TemporaryVariable methodsFor: 'initialization' stamp: 'NPM 1/5/2022 17:47:09'!
+initializeNamed: aName definedIn: aContext 
+
+	super initializeNamed: aName definedIn: aContext.
+	
+	self initializeIndex.! !
+
+!TemporaryVariable methodsFor: 'testing' stamp: 'NPM 1/5/2022 02:37:11'!
+isDefinedIn: aContext 
+	
+	^ context = aContext! !
+
+!TemporaryVariable methodsFor: 'as yet unclassified' stamp: 'NPM 1/5/2022 11:30:24'!
+kind
+	
+	^ 'Temporary variable'! !
+
+!TemporaryVariable class methodsFor: 'instance creation' stamp: 'NPM 1/5/2022 02:44:29'!
+allDefinedIn: aContext 
+
 	| definingContexstByTemporaryNames |
 	definingContexstByTemporaryNames _ aContext definingContextsByTemporaryNames.
 	
@@ -389,7 +767,7 @@ allDefinedIn: aContext
 			findOrCreateNamed: temporaryName
 			definedIn: (definingContexstByTemporaryNames at: temporaryName) ].! !
 
-!TemporaryVariable class methodsFor: 'instance creation' stamp: 'NPM 12/13/2021 19:14:47'!
+!TemporaryVariable class methodsFor: 'instance creation' stamp: 'NPM 1/5/2022 02:43:50'!
 findNamed: aName definedIn: aContext ifNone: noneBlock
 
 	^ self allInstances
@@ -398,17 +776,17 @@ findNamed: aName definedIn: aContext ifNone: noneBlock
 	
 	! !
 
-!TemporaryVariable class methodsFor: 'instance creation' stamp: 'NPM 12/13/2021 19:31:02'!
+!TemporaryVariable class methodsFor: 'instance creation' stamp: 'NPM 1/5/2022 02:43:14'!
 findOrCreateNamed: aName definedIn: aContext 
 
-	^ self
+	^ TemporaryVariable
 		findNamed: aName
 		definedIn: aContext
-		ifNone: [ self named: aName definedIn: aContext ] 
+		ifNone: [ TemporaryVariable named: aName definedIn: aContext ] 
 	
 	! !
 
-!TemporaryVariable class methodsFor: 'instance creation' stamp: 'NPM 12/27/2021 15:52:25'!
+!TemporaryVariable class methodsFor: 'instance creation' stamp: 'NPM 1/5/2022 02:44:07'!
 named: aName definedIn: aContext 
 
 	^ self
@@ -416,24 +794,170 @@ named: aName definedIn: aContext
 		initializeNamed: aName
 		definedIn: aContext! !
 
-!TemporaryVariablesInspector methodsFor: 'accessing' stamp: 'NPM 12/30/2021 18:33:34'!
+!WatchExpression methodsFor: 'accessing' stamp: 'NPM 1/6/2022 10:02:35'!
+context
+	
+	^ context! !
+
+!WatchExpression methodsFor: 'accessing' stamp: 'NPM 1/6/2022 10:30:21'!
+expression
+	
+	^ expression copy! !
+
+!WatchExpression methodsFor: 'accessing' stamp: 'NPM 1/5/2022 11:30:57'!
+kind
+	
+	^ 'Watch expression'! !
+
+!WatchExpression methodsFor: 'editing' stamp: 'NPM 1/7/2022 17:41:25'!
+changeExpressionTo: anExpression  
+	
+	expression = anExpression ifTrue: [ ^ self ].
+	expression _ anExpression.
+	self initializeExpressionBlock.
+	
+	self triggerChangedEvent.
+	
+	! !
+
+!WatchExpression methodsFor: 'editing' stamp: 'NPM 1/7/2022 17:49:01'!
+renameTo: newName andChangeExpressionTo: aNewExpression  
+	
+	(name = newName and: [ expression = aNewExpression ])
+		ifTrue: [ ^ self ].
+	
+	name _ newName.
+	expression _ aNewExpression.
+
+	self
+		initializeExpressionBlock;	
+		triggerChangedEvent.
+	
+	! !
+
+!WatchExpression methodsFor: 'evaluating' stamp: 'NPM 1/5/2022 02:47:48'!
+read
+	
+	^  [ lastReadValue _ expressionBlock value. 
+		
+		lastReadValue.
+	] on: Error do: [ :error | 
+	lastReadValue _ 'evaluation failed'.
+		^ 'evaluation failed'
+	]! !
+
+!WatchExpression methodsFor: 'events-registering' stamp: 'NPM 1/30/2022 11:29:29'!
+whenRemovedSend: aSelector to: anObject 
+	
+	self
+		when: self removedEventName
+		send: aSelector
+		to: anObject
+		with: self! !
+
+!WatchExpression methodsFor: 'events-triggering' stamp: 'NPM 1/30/2022 11:29:29'!
+remove
+	
+	self triggerEvent: self removedEventName! !
+
+!WatchExpression methodsFor: 'events-triggering' stamp: 'NPM 1/30/2022 11:29:29'!
+removedEventName
+
+	^ #removed! !
+
+!WatchExpression methodsFor: 'initialization' stamp: 'NPM 1/6/2022 10:56:12'!
+initializeExpressionBlock
+	
+	| compiler method methodNode sourceCode |
+	sourceCode _ String streamContents: [ :stream |
+		Scanner selectionDoItSourceCodeHeaderWithContext: context notNil into: stream.
+		stream nextPutAll: expression ].
+	
+	methodNode _ [
+		compiler _ Compiler new.
+		compiler		
+			compileDoIt: sourceCode
+			in: context receiver class
+			context: context
+			notifying: nil
+			ifFail: [ self halt. ]]
+		on: OutOfScopeNotification
+		do: [ :ex | ex resume: true ].
+
+	methodNode block returnLast.
+	method _ methodNode generate.
+	method methodNode: methodNode.
+	
+	
+	expressionBlock _ [ compiler
+		evaluateMethod: method
+		to: context receiver
+		logged: true
+		profiled: false. ]! !
+
+!WatchExpression methodsFor: 'initialization' stamp: 'NPM 1/7/2022 17:41:25'!
+initializeNamed: aName toEvaluate: anExpressionBlock in: aContext  
+
+	super initializeNamed: aName definedIn: aContext.
+
+	self changeExpressionTo: anExpressionBlock ! !
+
+!WatchExpression methodsFor: 'testing' stamp: 'NPM 1/7/2022 17:51:18'!
+renameTo: newName
+	
+	name = newName ifTrue: [ ^ self ].
+	
+	name _ newName.
+
+	self triggerRenamedEvent.
+	
+	! !
+
+!WatchExpression class methodsFor: 'instance creation' stamp: 'NPM 1/5/2022 17:59:51'!
+named: aName toEvaluate: anExpressionBlock in: aContext  
+	
+	
+	^ self
+		new
+		initializeNamed: aName
+		toEvaluate: anExpressionBlock
+		in: aContext ! !
+
+!WatchExpression class methodsFor: 'as yet unclassified' stamp: 'NPM 1/30/2022 11:13:41'!
+templateFor: aContext 
+
+	| expression |
+	expression  _ '"Enter watch expression here"',
+		String newLineString,
+		String newLineString,
+		'nil'.
+
+	^ WatchExpression
+		named: 'New watch'
+		toEvaluate: expression
+		in: aContext! !
+
+!TemporaryVariablesInspector methodsFor: 'accessing' stamp: 'NPM 1/5/2022 02:52:44'!
 context: aMethodContext 
 	
 	context = aMethodContext
-		ifTrue: [ self refreshAllTemporaryVariables ]
+		ifTrue: [ self refreshAllExpressions ]
 		ifFalse: [ self loadTemporaryVariablesFrom: aMethodContext ].! !
 
-!TemporaryVariablesInspector methodsFor: 'accessing' stamp: 'NPM 12/30/2021 15:55:38'!
+!TemporaryVariablesInspector methodsFor: 'accessing' stamp: 'NPM 1/5/2022 02:55:30'!
 initialize
 
 	super initialize.
 	
-	pinnedTemporaryVariables _ OrderedCollection new.! !
+	pinnedTemporaryVariables _ OrderedCollection new.
+	watches _ OrderedCollection new.! !
 
-!TemporaryVariablesInspector methodsFor: 'accessing' stamp: 'NPM 12/30/2021 12:53:59'!
+!TemporaryVariablesInspector methodsFor: 'accessing' stamp: 'NPM 1/5/2022 02:55:20'!
 update
 	
-	self refreshTemporaryVariables
+	self
+		refreshTemporaryVariables;
+		refreshWatches
 	! !
 
 !TemporaryVariablesInspector methodsFor: 'events-registering' stamp: 'NPM 12/28/2021 10:49:12'!
@@ -459,20 +983,20 @@ triggerContextChangedEvent
 
 	self triggerEvent: self contextChangedEventName! !
 
-!TemporaryVariablesInspector methodsFor: 'temporary variables' stamp: 'NPM 12/30/2021 18:21:35'!
+!TemporaryVariablesInspector methodsFor: 'temporary variables' stamp: 'NPM 1/6/2022 14:11:07'!
 loadTemporaryVariablesFrom: aMethodContext
 
 	self initializePinnedTemporaryVariables.
 	
 	context _ aMethodContext.
-	self triggerContextChangedEvent! !
+	self refreshWatches; triggerContextChangedEvent! !
 
-!TemporaryVariablesInspector methodsFor: 'temporary variables' stamp: 'NPM 12/30/2021 18:20:42'!
+!TemporaryVariablesInspector methodsFor: 'temporary variables' stamp: 'NPM 1/5/2022 02:41:36'!
 temporaryVariables
 	
 	context ifNil: [ ^ OrderedCollection new ].
 	
-	^ TemporaryVariable allDefinedIn: context! !
+	^ DebuggerExpression temporaryVariablesDefinedIn: context! !
 
 !TemporaryVariablesInspector methodsFor: 'temporary variables - pinned' stamp: 'NPM 12/30/2021 18:21:45'!
 initializePinnedTemporaryVariables
@@ -492,12 +1016,45 @@ refreshPinnedTemporaryVariables
 	
 	pinnedTemporaryVariables do: [ :temporaryVariable | temporaryVariable refresh ]! !
 
-!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 12/30/2021 18:34:09'!
-refreshAllTemporaryVariables
+!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 1/5/2022 13:38:50'!
+addWatch: aWatch 
+	
+	watches add: aWatch.
+	aWatch whenRemovedSend: #removeWatch: to: self.
+	self triggerContextChangedEvent! !
+
+!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 1/6/2022 19:54:41'!
+addWatchToEvaluate: anSmalltalkExpression 
+	self shouldBeImplemented.! !
+
+!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 1/4/2022 11:58:06'!
+context
+
+	^ context! !
+
+!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 1/5/2022 02:55:20'!
+refreshAllExpressions
 	
 	self
 		refreshPinnedTemporaryVariables;
-		refreshTemporaryVariables! !
+		refreshTemporaryVariables;
+		refreshWatches! !
+
+!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 1/5/2022 02:55:30'!
+refreshWatches
+	
+	watches do: [ :temporaryVariable | temporaryVariable refresh ].! !
+
+!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 1/5/2022 13:40:19'!
+removeWatch: aWatchExpression 
+	
+	watches remove: aWatchExpression.
+	self triggerContextChangedEvent ! !
+
+!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 1/5/2022 02:55:30'!
+watchExpressions
+
+	^ watches! !
 
 !Debugger methodsFor: '*Tools-AdvancedDebugger' stamp: 'NPM 12/11/2021 00:53:33'!
 openFullAdvancedDebuggerLabeled: aLabelString
@@ -543,6 +1100,22 @@ definingContextsByTemporaryNames
 		].
 	
 	! !
+
+!SmalltalkEditor methodsFor: '*Tools-AdvancedDebugger' stamp: 'NPM 1/30/2022 11:41:33'!
+addWatchFromSelection
+
+	| textProvider |
+	(model isKindOf: PluggableTextModel)
+		ifFalse:  [ ^ self inform: 'Watches can only be added from the Debugger' ].
+	
+	textProvider _ model textProvider.
+	
+	(textProvider isKindOf: Debugger)
+		ifFalse:  [ ^ self inform: 'Watches can only be added from the Debugger' ].
+	
+	textProvider
+		contextVariablesInspector
+		addWatchToEvaluate: self selection! !
 
 !DynamicMenuBuilder methodsFor: '*Tools-AdvancedDebugger' stamp: 'NPM 12/30/2021 18:28:41'!
 collectMenuOptions

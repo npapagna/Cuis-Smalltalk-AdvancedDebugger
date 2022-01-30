@@ -11,6 +11,7 @@ project does not follow [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Temporary variables refresh when restarting contexts, stepping into/over message sends, or stepping through blocks.
 * Highlight temporary variables when they change.
 * Support for pinning temporary variables (accessed through the temporary variable context menu).
+* Watch expressions. They can be added from the debugger in two ways: `right-clicking on the temporaries panel > Add watch...` or selecting a collaboration in the code editor and `right-click > Add to watches`. 
 
 ## Changed
 * Uses the new `AdvancedDebuggerWindow` instead of the built-in `DebuggerWindow` for opening the debugger.  
