@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4913] on 30 January 2022 at 11:41:50 am'!
+'From Cuis 5.0 [latest update: #4913] on 1 February 2022 at 12:22:03 am'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 9!
+!provides: 'Tools-AdvancedDebugger' 1 10!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 
@@ -17,7 +17,7 @@ WatchExpressionEditor class
 
 !classDefinition: #ContextVariablesInspectorToTemporaryVariablesInspectorAdapter category: #'Tools-AdvancedDebugger-UI'!
 ContextVariablesInspector subclass: #ContextVariablesInspectorToTemporaryVariablesInspectorAdapter
-	instanceVariableNames: 'temporaryVariablesInspector'
+	instanceVariableNames: 'temporaryVariablesInspector shouldUpdateTemporariesVariablesInspector'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger-UI'!
@@ -191,24 +191,35 @@ watchName
 	
 	^ acceptedWatchName! !
 
-!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'accessing' stamp: 'NPM 1/7/2022 22:05:37'!
+!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'accessing' stamp: 'NPM 2/1/2022 00:21:03'!
 object: aMethodContext 
-	
-	super object: aMethodContext.
-	
-	temporaryVariablesInspector context: aMethodContext.! !
 
-!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'accessing' stamp: 'NPM 1/7/2022 22:05:37'!
+	"I need to set this variable to false before sending #object: to avoid updating temporaryVariablesInspector twice:
+	    - Once via super object: (triggers self update which updates temporaryVariablesInspector
+	    - Once via temporaryVariablesInspector context:
+	
+	This is a hack, but it will do the trick for the time being.
+	"
+	[
+		shouldUpdateTemporariesVariablesInspector _ false.
+		super object: aMethodContext.
+		temporaryVariablesInspector context: aMethodContext
+	] ensure: [
+		shouldUpdateTemporariesVariablesInspector _ true ]! !
+
+!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'accessing' stamp: 'NPM 2/1/2022 00:18:36'!
 update
+	
 	
 	super update.
 	
-	temporaryVariablesInspector update! !
+	shouldUpdateTemporariesVariablesInspector ifTrue: [ 	temporaryVariablesInspector update ].! !
 
-!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'initialization' stamp: 'NPM 1/10/2022 17:30:05'!
+!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'initialization' stamp: 'NPM 2/1/2022 00:21:36'!
 initializeFor: aTemporaryVariablesInspector 
 	
-	temporaryVariablesInspector := aTemporaryVariablesInspector.! !
+	temporaryVariablesInspector := aTemporaryVariablesInspector.
+	shouldUpdateTemporariesVariablesInspector _ true.! !
 
 !ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'watches' stamp: 'NPM 1/7/2022 22:05:37'!
 addWatchToEvaluate: aSmalltalkExpression 
@@ -350,13 +361,6 @@ registerToDebuggerExpressionEvents
 		whenRenamedSend: #refresh
 		to: self."! !
 
-!TemporaryVariablesInspectorMorph methodsFor: 'events-registering' stamp: 'NPM 12/30/2021 14:34:07'!
-registerToTemporaryVariablesInspectorEvents
-
-	temporaryVariablesInspector
-		whenContextChangesSend: #reloadTemporaryVariables
-		to: self! !
-
 !TemporaryVariablesInspectorMorph methodsFor: 'initialization' stamp: 'NPM 1/6/2022 20:22:21'!
 initializeOn: aTemporaryVariablesInspector
 
@@ -366,6 +370,13 @@ initializeOn: aTemporaryVariablesInspector
 	self
 		addMorphUseAll: temporaryVariablesMorph;
 		registerToTemporaryVariablesInspectorEvents.! !
+
+!TemporaryVariablesInspectorMorph methodsFor: 'events-registering' stamp: 'NPM 12/30/2021 14:34:07'!
+registerToTemporaryVariablesInspectorEvents
+
+	temporaryVariablesInspector
+		whenContextChangesSend: #reloadTemporaryVariables
+		to: self! !
 
 !TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 1/5/2022 13:31:47'!
 reloadTemporaryVariables
@@ -702,7 +713,7 @@ togglePinnedToDebugger
 	
 	self triggerChangedEvent.! !
 
-!DebuggerExpression methodsFor: 'testing' stamp: 'NPM 1/5/2022 02:20:14'!
+!DebuggerExpression methodsFor: 'testing' stamp: 'NPM 2/1/2022 00:17:50'!
 ifChanged: changedBlock ifNotChanged: notChangedBlock 
 	
 	^ changed 
