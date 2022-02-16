@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4913] on 16 February 2022 at 3:05:26 am'!
+'From Cuis 5.0 [latest update: #4913] on 16 February 2022 at 3:28:09 am'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 16!
+!provides: 'Tools-AdvancedDebugger' 1 17!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 SystemOrganization addCategory: 'Tools-AdvancedDebugger-UI-Core'!
@@ -356,6 +356,31 @@ handlesMouseDown: aMouseButtonEvent
 
 	^ true! !
 
+!DebuggerExpressionMorph methodsFor: 'events' stamp: 'NPM 2/16/2022 03:27:26'!
+doubleClick: aMouseButtonEvent localPosition: localEventPosition
+
+	aMouseButtonEvent shiftPressed ifTrue: [ ^ self shiftDoubleClick ].
+	
+	debuggerExpression inspectValue! !
+
+!DebuggerExpressionMorph methodsFor: 'events' stamp: 'NPM 2/16/2022 03:19:11'!
+mouseButton1Down: aMouseButtonEvent localPosition: localEventPosition
+
+	aMouseButtonEvent hand 
+		waitForClicksOrDragOrSimulatedMouseButton2: self
+		event: aMouseButtonEvent
+		clkSel: nil
+		clkNHalf: nil
+		dblClkSel: #doubleClick:localPosition:
+		dblClkNHalfSel: nil
+		tripleClkSel: nil
+		dragSel: nil! !
+
+!DebuggerExpressionMorph methodsFor: 'events' stamp: 'NPM 2/16/2022 03:24:01'!
+shiftDoubleClick
+	
+	"NPM: Do nothing by default"! !
+
 !DebuggerExpressionMorph methodsFor: 'events-registering' stamp: 'NPM 1/5/2022 13:29:24'!
 registerToDebuggerExpressionEvents
 	
@@ -423,7 +448,7 @@ forWatch: aWatchExpression in: aTemporaryVariablesInspector
 		for: aWatchExpression
 		in: aTemporaryVariablesInspector! !
 
-!DebuggerExpressionMorph class methodsFor: 'context menu' stamp: 'NPM 1/5/2022 13:30:01'!
+!DebuggerExpressionMorph class methodsFor: 'context menu' stamp: 'NPM 2/16/2022 03:08:38'!
 debuggerExpressionMenuFor: aTemporaryVariable
 	
 	^ {
@@ -433,6 +458,13 @@ debuggerExpressionMenuFor: aTemporaryVariable
 			#label  			-> 	(aTemporaryVariable isPinnedToDebugger ifTrue: [ 'Unpin' ] ifFalse: [ 'Pin' ]).
 			#selector       		-> 		#togglePinnedToDebugger.
 		} asDictionary.
+		
+		{
+			#itemGroup 	 	-> 		2.
+			#itemOrder  	 	-> 		1.
+			#label  			-> 	'Inspect value (double click)'.
+			#selector       		-> 		#inspectValue.
+		} asDictionary.
 			
 	   }! !
 
@@ -441,7 +473,7 @@ createWatch
 	
 	 temporaryVariablesInspector addWatchToEvaluate: debuggerExpression name.! !
 
-!TemporaryVariableExpressionMorph methodsFor: 'context menu' stamp: 'NPM 2/16/2022 00:41:30'!
+!TemporaryVariableExpressionMorph methodsFor: 'context menu' stamp: 'NPM 2/16/2022 03:07:49'!
 contextMenu
 
 	^ super contextMenu
@@ -467,13 +499,13 @@ edit
 	
 	WatchExpressionEditorWindow openToEdit: debuggerExpression ! !
 
-!WatchExpressionMorph methodsFor: 'context menu' stamp: 'NPM 2/16/2022 00:50:00'!
+!WatchExpressionMorph methodsFor: 'context menu' stamp: 'NPM 2/16/2022 03:26:35'!
 contextMenu
 
 	^ super contextMenu
 		addLine;
 		add: 'Duplicate' target: self action: #duplicateWatch;
-		add: 'Edit' target: self action: #edit;
+		add: 'Edit (shift + double click)' target: self action: #edit;
 		add: 'Remove' target: debuggerExpression action: #remove;
 		yourself! !
 
@@ -485,6 +517,11 @@ registerToDebuggerExpressionEvents
 "	debuggerExpression
 		whenRenamedSend: #refresh
 		to: self."! !
+
+!WatchExpressionMorph methodsFor: 'as yet unclassified' stamp: 'NPM 2/16/2022 03:24:39'!
+shiftDoubleClick
+
+	self edit! !
 
 !WatchExpressionMorph class methodsFor: 'instance creation' stamp: 'NPM 2/16/2022 00:54:53'!
 for: aDebuggerExpression in: aTemporaryVariablesInspector  
@@ -1636,6 +1673,11 @@ ifChanged: changedBlock ifNotChanged: notChangedBlock
 isNamed: aName
 
 	^ self name = aName! !
+
+!DebuggerExpression methodsFor: 'as yet unclassified' stamp: 'NPM 2/16/2022 03:09:18'!
+inspectValue
+	
+	self value inspect! !
 
 !DebuggerExpression class methodsFor: 'instance creation' stamp: 'NPM 2/16/2022 01:43:08'!
 pseudoVariableNamed: aName valued: aValue
