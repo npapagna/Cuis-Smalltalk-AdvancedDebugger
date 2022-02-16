@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4913] on 16 February 2022 at 12:18:23 am'!
+'From Cuis 5.0 [latest update: #4913] on 16 February 2022 at 12:41:59 am'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 11!
+!provides: 'Tools-AdvancedDebugger' 1 12!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 SystemOrganization addCategory: 'Tools-AdvancedDebugger-UI-Core'!
@@ -34,6 +34,16 @@ LayoutMorph subclass: #DebuggerExpressionMorph
 	category: 'Tools-AdvancedDebugger-UI'!
 !classDefinition: 'DebuggerExpressionMorph class' category: #'Tools-AdvancedDebugger-UI'!
 DebuggerExpressionMorph class
+	instanceVariableNames: ''!
+
+!classDefinition: #TemporaryVariableExpressionMorph category: #'Tools-AdvancedDebugger-UI'!
+DebuggerExpressionMorph subclass: #TemporaryVariableExpressionMorph
+	instanceVariableNames: 'temporaryVariablesInspector'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger-UI'!
+!classDefinition: 'TemporaryVariableExpressionMorph class' category: #'Tools-AdvancedDebugger-UI'!
+TemporaryVariableExpressionMorph class
 	instanceVariableNames: ''!
 
 !classDefinition: #WatchExpressionMorph category: #'Tools-AdvancedDebugger-UI'!
@@ -272,16 +282,10 @@ initializeFor: aTemporaryVariablesInspector
 	temporaryVariablesInspector := aTemporaryVariablesInspector.
 	shouldUpdateTemporariesVariablesInspector _ true.! !
 
-!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'watches' stamp: 'NPM 1/7/2022 22:05:37'!
+!ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'watches' stamp: 'NPM 2/16/2022 00:40:46'!
 addWatchToEvaluate: aSmalltalkExpression 
 	
-	| watch |
-	watch _ DebuggerExpression
-		watchNamed: aSmalltalkExpression
-		toEvaluate: aSmalltalkExpression
-		in: temporaryVariablesInspector context.
-		
-	temporaryVariablesInspector addWatch: watch! !
+	temporaryVariablesInspector addWatchToEvaluate: aSmalltalkExpression! !
 
 !ContextVariablesInspectorToTemporaryVariablesInspectorAdapter class methodsFor: 'instance creation' stamp: 'NPM 12/30/2021 14:39:53'!
 for: aTemporaryVariablesInspector 
@@ -371,6 +375,18 @@ for: aDebuggerExpression
 		newRow
 		initializeFor: aDebuggerExpression ! !
 
+!DebuggerExpressionMorph class methodsFor: 'instance creation' stamp: 'NPM 2/16/2022 00:39:36'!
+forTemporaryVariable: aTemporaryVariable in: aTemporaryVariablesInspector  
+	
+	^ TemporaryVariableExpressionMorph
+		for: aTemporaryVariable
+		in: aTemporaryVariablesInspector! !
+
+!DebuggerExpressionMorph class methodsFor: 'instance creation' stamp: 'NPM 1/5/2022 13:33:14'!
+forWatch: aWatchExpression 
+	
+	^ WatchExpressionMorph for: aWatchExpression! !
+
 !DebuggerExpressionMorph class methodsFor: 'context menu' stamp: 'NPM 1/5/2022 13:30:01'!
 debuggerExpressionMenuFor: aTemporaryVariable
 	
@@ -384,10 +400,32 @@ debuggerExpressionMenuFor: aTemporaryVariable
 			
 	   }! !
 
-!DebuggerExpressionMorph class methodsFor: 'as yet unclassified' stamp: 'NPM 1/5/2022 13:33:14'!
-forWatch: aWatchExpression 
+!TemporaryVariableExpressionMorph methodsFor: 'actions' stamp: 'NPM 2/16/2022 00:38:19'!
+createWatch
 	
-	^ WatchExpressionMorph for: aWatchExpression! !
+	temporaryVariablesInspector addWatchToEvaluate: debuggerExpression name.! !
+
+!TemporaryVariableExpressionMorph methodsFor: 'context menu' stamp: 'NPM 2/16/2022 00:41:30'!
+contextMenu
+
+	^ super contextMenu
+		addLine;
+		add: 'Add to watches' target: self action: #createWatch;
+		yourself! !
+
+!TemporaryVariableExpressionMorph methodsFor: 'initialization' stamp: 'NPM 2/16/2022 00:38:19'!
+initializeFor: aTemporaryVariable in: aTemporaryVariablesInspector
+
+	temporaryVariablesInspector _ aTemporaryVariablesInspector.
+	super initializeFor: aTemporaryVariable! !
+
+!TemporaryVariableExpressionMorph class methodsFor: 'instance creation' stamp: 'NPM 2/16/2022 00:39:28'!
+for: aTemporaryVariable in: aTemporaryVariablesInspector  
+	
+	^ self
+		newRow
+		initializeFor: aTemporaryVariable
+		in: aTemporaryVariablesInspector! !
 
 !WatchExpressionMorph methodsFor: 'actions' stamp: 'NPM 1/10/2022 17:23:52'!
 edit
@@ -431,7 +469,7 @@ registerToTemporaryVariablesInspectorEvents
 		whenContextChangesSend: #reloadTemporaryVariables
 		to: self! !
 
-!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 2/14/2022 12:45:32'!
+!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 2/16/2022 00:31:28'!
 reloadTemporaryVariables
 		
 	temporaryVariablesMorph removeAllItems.
@@ -448,7 +486,9 @@ reloadTemporaryVariables
 	(temporaryVariablesInspector pinnedTemporaryVariables, temporaryVariablesInspector temporaryVariables)
 		do: [ :temporaryVariable |
 			temporaryVariablesMorph
-				addItem: (DebuggerExpressionMorph for: temporaryVariable) ].
+				addItem: (DebuggerExpressionMorph
+							forTemporaryVariable: temporaryVariable
+							in: temporaryVariablesInspector) ].
 			
 	
 	! !
@@ -1872,23 +1912,30 @@ refreshPinnedTemporaryVariables
 	
 	pinnedTemporaryVariables do: [ :temporaryVariable | temporaryVariable refresh ]! !
 
-!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 1/5/2022 13:38:50'!
+!TemporaryVariablesInspector methodsFor: 'watches' stamp: 'NPM 1/5/2022 13:38:50'!
 addWatch: aWatch 
 	
 	watches add: aWatch.
 	aWatch whenRemovedSend: #removeWatch: to: self.
 	self triggerContextChangedEvent! !
 
-!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 1/6/2022 19:54:41'!
-addWatchToEvaluate: anSmalltalkExpression 
-	self shouldBeImplemented.! !
+!TemporaryVariablesInspector methodsFor: 'watches' stamp: 'NPM 2/16/2022 00:35:31'!
+addWatchToEvaluate: aSmalltalkExpression 
+	
+	| watch |
+	watch _ DebuggerExpression
+		watchNamed: aSmalltalkExpression
+		toEvaluate: aSmalltalkExpression
+		in: context.
+		
+	self addWatch: watch! !
 
-!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 1/4/2022 11:58:06'!
+!TemporaryVariablesInspector methodsFor: 'watches' stamp: 'NPM 1/4/2022 11:58:06'!
 context
 
 	^ context! !
 
-!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 1/5/2022 02:55:20'!
+!TemporaryVariablesInspector methodsFor: 'watches' stamp: 'NPM 1/5/2022 02:55:20'!
 refreshAllExpressions
 	
 	self
@@ -1896,18 +1943,18 @@ refreshAllExpressions
 		refreshTemporaryVariables;
 		refreshWatches! !
 
-!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 1/5/2022 02:55:30'!
+!TemporaryVariablesInspector methodsFor: 'watches' stamp: 'NPM 1/5/2022 02:55:30'!
 refreshWatches
 	
 	watches do: [ :temporaryVariable | temporaryVariable refresh ].! !
 
-!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 1/5/2022 13:40:19'!
+!TemporaryVariablesInspector methodsFor: 'watches' stamp: 'NPM 1/5/2022 13:40:19'!
 removeWatch: aWatchExpression 
 	
 	watches remove: aWatchExpression.
 	self triggerContextChangedEvent ! !
 
-!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 1/5/2022 02:55:30'!
+!TemporaryVariablesInspector methodsFor: 'watches' stamp: 'NPM 1/5/2022 02:55:30'!
 watchExpressions
 
 	^ watches! !
