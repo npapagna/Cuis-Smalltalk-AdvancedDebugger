@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4913] on 16 February 2022 at 2:57:59 am'!
+'From Cuis 5.0 [latest update: #4913] on 16 February 2022 at 3:05:26 am'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 15!
+!provides: 'Tools-AdvancedDebugger' 1 16!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 SystemOrganization addCategory: 'Tools-AdvancedDebugger-UI-Core'!
@@ -863,15 +863,17 @@ removeAllItems
 	
 	self removeAllMorphsIn: self items! !
 
-!ADListMorph methodsFor: 'items' stamp: 'NPM 2/14/2022 19:32:10'!
+!ADListMorph methodsFor: 'items' stamp: 'NPM 2/16/2022 03:04:18'!
 updateScrollbar
 	
-	| scrollSteps |
-	scrollSteps _ self calculateScrollSteps.
+	| scrollSteps scroller |
+	scroller _ self createScroller.
+	scrollSteps _ scroller steps.
 
 	scrollSteps strictlyPositive
 		ifFalse: [ scrollbar hide ]
 		ifTrue: [
+			scrollbar interval: scroller percentageOfItemsVisible.
 			scrollbar scrollDelta: 1/scrollSteps pageDelta: 1/scrollSteps.
 			scrollbar show ].
 	! !
@@ -941,11 +943,6 @@ separateItemsVerticallyBy: pixels
 	itemSeparatorGap _ 0@pixels.
 
 	self layoutSubmorphs ! !
-
-!ADListMorph methodsFor: 'scrolling' stamp: 'NPM 2/14/2022 19:31:14'!
-calculateScrollSteps
-	
-	^ self createScroller steps! !
 
 !ADListMorph methodsFor: 'scrolling' stamp: 'NPM 2/14/2022 19:35:33'!
 createScroller
@@ -2134,6 +2131,11 @@ offsetUpTo: aScrollStep
 	self assertIsValidScrollStep: aScrollStep.
 	
 	^ (1 to: aScrollStep) inject: 0 into: [ :offset :step | offset + (fragmentsToScroll at: step) ]! !
+
+!SlidingWindowScroller methodsFor: 'as yet unclassified' stamp: 'NPM 2/16/2022 03:04:47'!
+percentageOfItemsVisible
+	
+	^ windowSize / self totalSizeToScroll! !
 
 !SlidingWindowScroller methodsFor: 'as yet unclassified' stamp: 'NPM 2/14/2022 12:38:29'!
 separateItemsBy: numberOfPixels 
