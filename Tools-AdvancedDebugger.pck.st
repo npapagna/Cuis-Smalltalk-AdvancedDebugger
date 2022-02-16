@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4913] on 16 February 2022 at 1:49:07 am'!
+'From Cuis 5.0 [latest update: #4913] on 16 February 2022 at 2:57:59 am'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 14!
+!provides: 'Tools-AdvancedDebugger' 1 15!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 SystemOrganization addCategory: 'Tools-AdvancedDebugger-UI-Core'!
@@ -222,6 +222,16 @@ name
 name
 
 	^ name! !
+
+!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 2/16/2022 02:55:41'!
+acceptContentsFrom: aTextModelMorph
+
+	| owningWindow |
+	owningWindow _ aTextModelMorph owningWindow.
+	
+	self assert: owningWindow class = WatchExpressionEditorWindow.
+	
+	owningWindow accept.! !
 
 !WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 2/16/2022 01:47:05'!
 actualWatchExpression
@@ -663,14 +673,16 @@ buildLabel: aLabel
 
 	^ (LabelMorph contents: aLabel) emphasis: 1! !
 
-!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/30/2022 11:19:00'!
+!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 2/16/2022 02:57:36'!
 buildMorphicCodePane
 
 	^ (TextModelMorph withModel: model)
 		askBeforeDiscardingEdits: false;
 		"NPM: Refresh actual contents because model always have an expression (either a template or an actual expression if an existing watch is being edited).
 		 If I don't do this, code will not be sytled the first time the window is opened."
-		updateActualContents ! !
+		updateActualContents;
+		hasUnacceptedEdits: true;
+		escAction: [ self cancel ]! !
 
 !WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/6/2022 21:23:16'!
 buildMorphicWindow
