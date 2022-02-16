@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4913] on 16 February 2022 at 12:41:59 am'!
+'From Cuis 5.0 [latest update: #4913] on 16 February 2022 at 12:54:58 am'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 12!
+!provides: 'Tools-AdvancedDebugger' 1 13!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 SystemOrganization addCategory: 'Tools-AdvancedDebugger-UI-Core'!
@@ -28,7 +28,7 @@ ContextVariablesInspectorToTemporaryVariablesInspectorAdapter class
 
 !classDefinition: #DebuggerExpressionMorph category: #'Tools-AdvancedDebugger-UI'!
 LayoutMorph subclass: #DebuggerExpressionMorph
-	instanceVariableNames: 'debuggerExpression'
+	instanceVariableNames: 'debuggerExpression temporaryVariablesInspector'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger-UI'!
@@ -38,7 +38,7 @@ DebuggerExpressionMorph class
 
 !classDefinition: #TemporaryVariableExpressionMorph category: #'Tools-AdvancedDebugger-UI'!
 DebuggerExpressionMorph subclass: #TemporaryVariableExpressionMorph
-	instanceVariableNames: 'temporaryVariablesInspector'
+	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger-UI'!
@@ -328,10 +328,11 @@ defaultColor
 
 	^ Color transparent! !
 
-!DebuggerExpressionMorph methodsFor: 'initialization' stamp: 'NPM 1/5/2022 13:29:24'!
-initializeFor: aDebuggerExpression 
+!DebuggerExpressionMorph methodsFor: 'initialization' stamp: 'NPM 2/16/2022 00:47:19'!
+initializeFor: aDebuggerExpression in: aTemporaryVariablesInspector  
 
 	debuggerExpression _ aDebuggerExpression.
+	temporaryVariablesInspector _ aTemporaryVariablesInspector.
 	
 	self
 		initializeSubmorphs;
@@ -368,13 +369,6 @@ refresh
 		
 	self morphExtent: self firstSubmorph morphExtent! !
 
-!DebuggerExpressionMorph class methodsFor: 'instance creation' stamp: 'NPM 1/5/2022 13:28:57'!
-for: aDebuggerExpression 
-	
-	^ self
-		newRow
-		initializeFor: aDebuggerExpression ! !
-
 !DebuggerExpressionMorph class methodsFor: 'instance creation' stamp: 'NPM 2/16/2022 00:39:36'!
 forTemporaryVariable: aTemporaryVariable in: aTemporaryVariablesInspector  
 	
@@ -382,10 +376,12 @@ forTemporaryVariable: aTemporaryVariable in: aTemporaryVariablesInspector
 		for: aTemporaryVariable
 		in: aTemporaryVariablesInspector! !
 
-!DebuggerExpressionMorph class methodsFor: 'instance creation' stamp: 'NPM 1/5/2022 13:33:14'!
-forWatch: aWatchExpression 
+!DebuggerExpressionMorph class methodsFor: 'instance creation' stamp: 'NPM 2/16/2022 00:54:09'!
+forWatch: aWatchExpression in: aTemporaryVariablesInspector  
 	
-	^ WatchExpressionMorph for: aWatchExpression! !
+	^ WatchExpressionMorph
+		for: aWatchExpression
+		in: aTemporaryVariablesInspector! !
 
 !DebuggerExpressionMorph class methodsFor: 'context menu' stamp: 'NPM 1/5/2022 13:30:01'!
 debuggerExpressionMenuFor: aTemporaryVariable
@@ -400,10 +396,10 @@ debuggerExpressionMenuFor: aTemporaryVariable
 			
 	   }! !
 
-!TemporaryVariableExpressionMorph methodsFor: 'actions' stamp: 'NPM 2/16/2022 00:38:19'!
+!TemporaryVariableExpressionMorph methodsFor: 'actions' stamp: 'NPM 2/16/2022 00:47:38'!
 createWatch
 	
-	temporaryVariablesInspector addWatchToEvaluate: debuggerExpression name.! !
+	 temporaryVariablesInspector addWatchToEvaluate: debuggerExpression name.! !
 
 !TemporaryVariableExpressionMorph methodsFor: 'context menu' stamp: 'NPM 2/16/2022 00:41:30'!
 contextMenu
@@ -413,12 +409,6 @@ contextMenu
 		add: 'Add to watches' target: self action: #createWatch;
 		yourself! !
 
-!TemporaryVariableExpressionMorph methodsFor: 'initialization' stamp: 'NPM 2/16/2022 00:38:19'!
-initializeFor: aTemporaryVariable in: aTemporaryVariablesInspector
-
-	temporaryVariablesInspector _ aTemporaryVariablesInspector.
-	super initializeFor: aTemporaryVariable! !
-
 !TemporaryVariableExpressionMorph class methodsFor: 'instance creation' stamp: 'NPM 2/16/2022 00:39:28'!
 for: aTemporaryVariable in: aTemporaryVariablesInspector  
 	
@@ -427,16 +417,22 @@ for: aTemporaryVariable in: aTemporaryVariablesInspector
 		initializeFor: aTemporaryVariable
 		in: aTemporaryVariablesInspector! !
 
+!WatchExpressionMorph methodsFor: 'actions' stamp: 'NPM 2/16/2022 00:52:04'!
+duplicateWatch
+	
+	temporaryVariablesInspector addWatch: debuggerExpression copy! !
+
 !WatchExpressionMorph methodsFor: 'actions' stamp: 'NPM 1/10/2022 17:23:52'!
 edit
 	
 	WatchExpressionEditorWindow openToEdit: debuggerExpression ! !
 
-!WatchExpressionMorph methodsFor: 'context menu' stamp: 'NPM 1/7/2022 17:57:22'!
+!WatchExpressionMorph methodsFor: 'context menu' stamp: 'NPM 2/16/2022 00:50:00'!
 contextMenu
 
 	^ super contextMenu
 		addLine;
+		add: 'Duplicate' target: self action: #duplicateWatch;
 		add: 'Edit' target: self action: #edit;
 		add: 'Remove' target: debuggerExpression action: #remove;
 		yourself! !
@@ -449,6 +445,14 @@ registerToDebuggerExpressionEvents
 "	debuggerExpression
 		whenRenamedSend: #refresh
 		to: self."! !
+
+!WatchExpressionMorph class methodsFor: 'instance creation' stamp: 'NPM 2/16/2022 00:54:53'!
+for: aDebuggerExpression in: aTemporaryVariablesInspector  
+	
+	^ self
+		newRow
+		initializeFor: aDebuggerExpression
+		in: aTemporaryVariablesInspector ! !
 
 !TemporaryVariablesInspectorMorph methodsFor: 'initialization' stamp: 'NPM 2/9/2022 00:43:03'!
 initializeOn: aTemporaryVariablesInspector
@@ -469,7 +473,7 @@ registerToTemporaryVariablesInspectorEvents
 		whenContextChangesSend: #reloadTemporaryVariables
 		to: self! !
 
-!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 2/16/2022 00:31:28'!
+!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 2/16/2022 00:46:27'!
 reloadTemporaryVariables
 		
 	temporaryVariablesMorph removeAllItems.
@@ -478,7 +482,9 @@ reloadTemporaryVariables
 		temporaryVariablesMorph addItem: (SeparatorMorph labeled: 'WATCHES').
 		temporaryVariablesInspector watchExpressions
 			do: [ :watchExpression |
-				temporaryVariablesMorph addItem: (DebuggerExpressionMorph forWatch: watchExpression) ].
+				temporaryVariablesMorph addItem: (DebuggerExpressionMorph
+					forWatch: watchExpression
+					in: temporaryVariablesInspector ) ].
 		temporaryVariablesMorph addItem: (KernelMorph new morphHeight: 10; color: Color transparent)
 	].
 
@@ -1808,6 +1814,14 @@ renameTo: newName
 	self triggerRenamedEvent.
 	
 	! !
+
+!WatchExpression methodsFor: 'as yet unclassified' stamp: 'NPM 2/16/2022 00:52:39'!
+copy
+
+	^ self class
+		named: name
+		toEvaluate: expression
+		in: context! !
 
 !WatchExpression class methodsFor: 'instance creation' stamp: 'NPM 1/5/2022 17:59:51'!
 named: aName toEvaluate: anExpressionBlock in: aContext  

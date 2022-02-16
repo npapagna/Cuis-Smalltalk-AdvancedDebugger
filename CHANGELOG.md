@@ -13,7 +13,8 @@ project does not follow [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Support for pinning temporary variables (accessed through the temporary variable context menu).
 * Watch expressions. They can be added from the debugger in two ways: `right-clicking on the temporaries panel > Add watch...` or selecting a collaboration in the code editor and `right-click > Add to watches`. 
 * Group watches and temporaries in the temporary variable's inspector.
-* Support adding watch expressions from the temporary variable's context menu.
+* Support for adding watch expressions from the temporary variable's context menu.
+* Support for duplicating watches.
 
 ## Changed
 * Uses the new `AdvancedDebuggerWindow` instead of the built-in `DebuggerWindow` for opening the debugger.  
