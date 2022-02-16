@@ -1,8 +1,9 @@
-'From Cuis 5.0 [latest update: #4913] on 1 February 2022 at 12:22:03 am'!
+'From Cuis 5.0 [latest update: #4913] on 16 February 2022 at 12:18:23 am'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 10!
+!provides: 'Tools-AdvancedDebugger' 1 11!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
+SystemOrganization addCategory: 'Tools-AdvancedDebugger-UI-Core'!
 
 
 !classDefinition: #WatchExpressionEditor category: #'Tools-AdvancedDebugger'!
@@ -47,7 +48,7 @@ WatchExpressionMorph class
 
 !classDefinition: #TemporaryVariablesInspectorMorph category: #'Tools-AdvancedDebugger-UI'!
 LayoutMorph subclass: #TemporaryVariablesInspectorMorph
-	instanceVariableNames: 'temporaryVariablesInspector temporaryVariablesMorph'
+	instanceVariableNames: 'temporaryVariablesInspector temporaryVariablesMorph container wVariablesMorph'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger-UI'!
@@ -73,6 +74,46 @@ SystemWindow subclass: #WatchExpressionEditorWindow
 	category: 'Tools-AdvancedDebugger-UI'!
 !classDefinition: 'WatchExpressionEditorWindow class' category: #'Tools-AdvancedDebugger-UI'!
 WatchExpressionEditorWindow class
+	instanceVariableNames: ''!
+
+!classDefinition: #ADListMorph category: 'Tools-AdvancedDebugger-UI-Core'!
+WidgetMorph subclass: #ADListMorph
+	instanceVariableNames: 'firstItemPosition itemSeparatorGap scrollbar'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger-UI-Core'!
+!classDefinition: 'ADListMorph class' category: 'Tools-AdvancedDebugger-UI-Core'!
+ADListMorph class
+	instanceVariableNames: ''!
+
+!classDefinition: #SeparatorMorph category: 'Tools-AdvancedDebugger-UI-Core'!
+WidgetMorph subclass: #SeparatorMorph
+	instanceVariableNames: 'label'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger-UI-Core'!
+!classDefinition: 'SeparatorMorph class' category: 'Tools-AdvancedDebugger-UI-Core'!
+SeparatorMorph class
+	instanceVariableNames: ''!
+
+!classDefinition: #ADListMorphTest category: 'Tools-AdvancedDebugger-UI-Core'!
+TestCase subclass: #ADListMorphTest
+	instanceVariableNames: 'list'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger-UI-Core'!
+!classDefinition: 'ADListMorphTest class' category: 'Tools-AdvancedDebugger-UI-Core'!
+ADListMorphTest class
+	instanceVariableNames: ''!
+
+!classDefinition: #SlidingWindowScrollerTest category: 'Tools-AdvancedDebugger-UI-Core'!
+TestCase subclass: #SlidingWindowScrollerTest
+	instanceVariableNames: 'scroller2'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger-UI-Core'!
+!classDefinition: 'SlidingWindowScrollerTest class' category: 'Tools-AdvancedDebugger-UI-Core'!
+SlidingWindowScrollerTest class
 	instanceVariableNames: ''!
 
 !classDefinition: #DebuggerExpression category: #'Tools-AdvancedDebugger'!
@@ -113,6 +154,16 @@ Object subclass: #TemporaryVariablesInspector
 	category: 'Tools-AdvancedDebugger'!
 !classDefinition: 'TemporaryVariablesInspector class' category: #'Tools-AdvancedDebugger'!
 TemporaryVariablesInspector class
+	instanceVariableNames: ''!
+
+!classDefinition: #SlidingWindowScroller category: 'Tools-AdvancedDebugger-UI-Core'!
+Object subclass: #SlidingWindowScroller
+	instanceVariableNames: 'windowSize fragmentsToScroll totalHeightToScroll itemSeparationGap'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger-UI-Core'!
+!classDefinition: 'SlidingWindowScroller class' category: 'Tools-AdvancedDebugger-UI-Core'!
+SlidingWindowScroller class
 	instanceVariableNames: ''!
 
 
@@ -361,13 +412,15 @@ registerToDebuggerExpressionEvents
 		whenRenamedSend: #refresh
 		to: self."! !
 
-!TemporaryVariablesInspectorMorph methodsFor: 'initialization' stamp: 'NPM 1/6/2022 20:22:21'!
+!TemporaryVariablesInspectorMorph methodsFor: 'initialization' stamp: 'NPM 2/9/2022 00:43:03'!
 initializeOn: aTemporaryVariablesInspector
 
 	temporaryVariablesInspector _ aTemporaryVariablesInspector.
-	temporaryVariablesMorph _ LayoutMorph newColumn.
+	temporaryVariablesMorph _ ADListMorph new
+		separateItemsVerticallyBy: 2.
 	
 	self
+		separation: 4;
 		addMorphUseAll: temporaryVariablesMorph;
 		registerToTemporaryVariablesInspectorEvents.! !
 
@@ -378,23 +431,26 @@ registerToTemporaryVariablesInspectorEvents
 		whenContextChangesSend: #reloadTemporaryVariables
 		to: self! !
 
-!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 1/5/2022 13:31:47'!
+!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 2/14/2022 12:45:32'!
 reloadTemporaryVariables
 		
-	temporaryVariablesMorph removeAllMorphs.
+	temporaryVariablesMorph removeAllItems.
+	
+	temporaryVariablesInspector watchExpressions ifNotEmpty: [
+		temporaryVariablesMorph addItem: (SeparatorMorph labeled: 'WATCHES').
+		temporaryVariablesInspector watchExpressions
+			do: [ :watchExpression |
+				temporaryVariablesMorph addItem: (DebuggerExpressionMorph forWatch: watchExpression) ].
+		temporaryVariablesMorph addItem: (KernelMorph new morphHeight: 10; color: Color transparent)
+	].
 
+	temporaryVariablesMorph addItem: (SeparatorMorph labeled: 'TEMPORARIES').
 	(temporaryVariablesInspector pinnedTemporaryVariables, temporaryVariablesInspector temporaryVariables)
 		do: [ :temporaryVariable |
 			temporaryVariablesMorph
-				addMorph: (DebuggerExpressionMorph for: temporaryVariable)
-				layoutSpec: (LayoutSpec morphHeightProportionalWidth: 1) ].
+				addItem: (DebuggerExpressionMorph for: temporaryVariable) ].
 			
-	temporaryVariablesInspector watchExpressions
-		do: [ :watchExpression |
-			temporaryVariablesMorph
-				addMorph: (DebuggerExpressionMorph forWatch: watchExpression)
-				layoutSpec: (LayoutSpec morphHeightProportionalWidth: 1) ].
-
+	
 	! !
 
 !TemporaryVariablesInspectorMorph methodsFor: 'as yet unclassified' stamp: 'NPM 1/6/2022 20:24:56'!
@@ -645,6 +701,795 @@ smalltalkEditorMenuOptions
 			} asDictionary.
 			
 		}`! !
+
+!ADListMorph methodsFor: 'asserting' stamp: 'NPM 2/10/2022 10:40:39'!
+verticalItemSeparationCannotBeNegativeErrorMessage
+	
+	^ 'Vertical items separation cannot be negative'! !
+
+!ADListMorph methodsFor: 'drawing' stamp: 'NPM 2/8/2022 02:37:33'!
+drawOn: aCanvas
+
+	"NPM: do nothing"! !
+
+!ADListMorph methodsFor: 'event handling testing' stamp: 'NPM 2/14/2022 19:27:10'!
+handlesMouseScroll: aMouseScrollEvent
+	
+	^ self isScrollingEnabled and: [ aMouseScrollEvent isDirectionVertical ]! !
+
+!ADListMorph methodsFor: 'events' stamp: 'NPM 2/14/2022 12:46:41'!
+mouseScroll: aMouseEvent localPosition: localEventPosition
+
+	aMouseEvent direction = #up
+		ifTrue: [ ^ scrollbar scrollUp: 1 ].
+	
+	aMouseEvent direction = #down
+		ifTrue: [ ^ scrollbar scrollDown: 1 ].! !
+
+!ADListMorph methodsFor: 'geometry testing' stamp: 'NPM 2/4/2022 01:18:04'!
+clipsSubmorphs
+
+	^ true! !
+
+!ADListMorph methodsFor: 'initialization' stamp: 'NPM 2/11/2022 19:54:41'!
+initialize
+
+	super initialize.
+	
+	firstItemPosition _ 0@0.
+	itemSeparatorGap _ 0@0.
+	
+	self initializeScrollbar.
+! !
+
+!ADListMorph methodsFor: 'initialization' stamp: 'NPM 2/14/2022 19:44:33'!
+initializeScrollbar
+
+	scrollbar _ ScrollBar new
+		model: self
+		setValueSelector: #scrollBarValueChangedTo:.
+		
+	self addMorph: scrollbar.
+	
+	scrollbar hide.
+	! !
+
+!ADListMorph methodsFor: 'items' stamp: 'NPM 2/11/2022 11:11:34'!
+addItem: anItem 
+	
+	self
+		addMorphBack: anItem;
+		updateScrollbar.! !
+
+!ADListMorph methodsFor: 'items' stamp: 'NPM 2/14/2022 12:45:09'!
+items
+
+	^ submorphs copyWithout: scrollbar! !
+
+!ADListMorph methodsFor: 'items' stamp: 'NPM 2/14/2022 12:46:00'!
+removeAllItems
+	
+	self removeAllMorphsIn: self items! !
+
+!ADListMorph methodsFor: 'items' stamp: 'NPM 2/14/2022 19:32:10'!
+updateScrollbar
+	
+	| scrollSteps |
+	scrollSteps _ self calculateScrollSteps.
+
+	scrollSteps strictlyPositive
+		ifFalse: [ scrollbar hide ]
+		ifTrue: [
+			scrollbar scrollDelta: 1/scrollSteps pageDelta: 1/scrollSteps.
+			scrollbar show ].
+	! !
+
+!ADListMorph methodsFor: 'layout' stamp: 'NPM 2/14/2022 19:37:38'!
+assertItemSeparationIsPositive: pixels
+
+	^ pixels negative
+		ifTrue: [ self error: self verticalItemSeparationCannotBeNegativeErrorMessage ]! !
+
+!ADListMorph methodsFor: 'layout' stamp: 'NPM 2/14/2022 19:24:21'!
+isScrollingEnabled
+
+	^ scrollbar visible! !
+
+!ADListMorph methodsFor: 'layout' stamp: 'NPM 2/14/2022 19:24:15'!
+itemWidth
+
+	^ self isScrollingEnabled
+		ifTrue: [ scrollbar morphPosition x ]
+		ifFalse: [ self morphWidth ] ! !
+
+!ADListMorph methodsFor: 'layout' stamp: 'NPM 2/11/2022 11:14:53'!
+layout: anItem in: aPosition
+
+	"Layout anItem and return the position where the next item should be placed"
+	
+	anItem
+		morphPosition: aPosition;
+		morphWidth: self itemWidth;
+		visible: anItem isWithinOwnerBounds.
+	
+	^ aPosition + (0@anItem morphHeight)! !
+
+!ADListMorph methodsFor: 'layout' stamp: 'NPM 2/10/2022 02:17:23'!
+layoutItems
+
+	| nextItemPosition |
+	nextItemPosition _ firstItemPosition.
+	
+	self items
+		do: [ :item |  nextItemPosition _ self layout: item in: nextItemPosition ]
+		separatedBy: [ nextItemPosition _ nextItemPosition + itemSeparatorGap ].! !
+
+!ADListMorph methodsFor: 'layout' stamp: 'NPM 2/14/2022 12:46:36'!
+layoutScrollbar
+
+	scrollbar
+		morphPosition: (self morphWidth - scrollbar morphWidth)@0;
+		morphHeight: self morphHeight
+		! !
+
+!ADListMorph methodsFor: 'layout' stamp: 'NPM 2/11/2022 11:11:48'!
+layoutSubmorphs
+
+	
+	self
+		layoutScrollbar;
+		layoutItems;
+		layoutNeeded: false.! !
+
+!ADListMorph methodsFor: 'layout' stamp: 'NPM 2/14/2022 19:37:23'!
+separateItemsVerticallyBy: pixels 
+
+	self assertItemSeparationIsPositive: pixels.
+	
+	itemSeparatorGap _ 0@pixels.
+
+	self layoutSubmorphs ! !
+
+!ADListMorph methodsFor: 'scrolling' stamp: 'NPM 2/14/2022 19:31:14'!
+calculateScrollSteps
+	
+	^ self createScroller steps! !
+
+!ADListMorph methodsFor: 'scrolling' stamp: 'NPM 2/14/2022 19:35:33'!
+createScroller
+	
+	| scroller |
+	scroller _ SlidingWindowScroller windowSize: self morphHeight.
+	
+	scroller separateItemsBy: itemSeparatorGap y.
+	
+	self items do: [ :item | scroller addItemToScroll:item morphHeight ].
+	
+	^ scroller! !
+
+!ADListMorph methodsFor: 'scrolling' stamp: 'NPM 2/14/2022 19:35:04'!
+scrollBarValueChangedTo: scrollPercentage 
+	
+	| requestedNumberOfScrollSteps offset |
+	requestedNumberOfScrollSteps _ scrollbar numberOfScrollStepsFrom: scrollPercentage.
+
+	offset _ self
+		createScroller
+		offsetUpTo: requestedNumberOfScrollSteps .
+	
+	firstItemPosition _ 0@(offset negated).
+
+	self layoutSubmorphs ! !
+
+!SeparatorMorph methodsFor: 'drawing' stamp: 'NPM 2/9/2022 00:57:46'!
+drawOn: aCanvas
+
+	| lineHeight |
+	lineHeight _ label morphHeight / 2.
+	
+	aCanvas
+		line: label morphWidth@lineHeight
+		to: (self morphWidth@lineHeight)
+		width: 1
+		color: Color veryLightGray! !
+
+!SeparatorMorph methodsFor: 'initialization' stamp: 'NPM 2/9/2022 00:56:46'!
+initializeLabelWith: aTitle
+
+	label _ (LabelMorph contents: aTitle, ' ')
+		color: Color gray;
+		font: (FontFamily defaultFamilyPointSize: 8)! !
+
+!SeparatorMorph methodsFor: 'initialization' stamp: 'NPM 2/9/2022 00:58:27'!
+initializeLabeled: aTitle
+	
+	super initialize.
+	
+	self initializeLabelWith: aTitle.
+	self addMorph: label.
+	self morphHeight: label morphHeight.
+	! !
+
+!SeparatorMorph class methodsFor: 'as yet unclassified' stamp: 'NPM 2/9/2022 00:58:27'!
+labeled: aTitle
+	
+	^ self
+		new
+		initializeLabeled: aTitle! !
+
+!ADListMorphTest methodsFor: 'assertions' stamp: 'NPM 2/9/2022 00:45:58'!
+assert: anItem isVisible: isVisible at: aPosition 
+	
+	self assert: isVisible equals: anItem visible.
+	self assert: aPosition equals: anItem morphPosition.! !
+
+!ADListMorphTest methodsFor: 'assertions' stamp: 'NPM 2/9/2022 00:46:34'!
+assert: anItem isVisibleAt: aPosition 
+	
+	self
+		assert: anItem
+		isVisible: true
+		at: aPosition! !
+
+!ADListMorphTest methodsFor: 'assertions' stamp: 'NPM 2/10/2022 10:48:46'!
+assertHandlesMouseScrollEventGoing: aDirection 
+	
+	self
+		assertHandlesMouseScrollGoing: aDirection
+		equals: true.! !
+
+!ADListMorphTest methodsFor: 'assertions' stamp: 'NPM 2/10/2022 10:48:46'!
+assertHandlesMouseScrollGoing: aDirection equals: aBoolean 
+	
+	| mouseScrollEvent |
+	mouseScrollEvent _ self createMouseScrollEventGoing: aDirection.
+	
+	self
+		assert: aBoolean
+		equals: (list handlesMouseScroll: mouseScrollEvent).! !
+
+!ADListMorphTest methodsFor: 'assertions' stamp: 'NPM 2/9/2022 00:46:47'!
+deny: anItem isVisibleAt: aPosition 
+	
+	self
+		assert: anItem
+		isVisible: false
+		at: aPosition! !
+
+!ADListMorphTest methodsFor: 'assertions' stamp: 'NPM 2/10/2022 10:48:46'!
+denyHandlesMouseScrollEventGoing: aDirection 
+	
+	self
+		assertHandlesMouseScrollGoing: aDirection
+		equals: false.! !
+
+!ADListMorphTest methodsFor: 'exercising' stamp: 'NPM 2/9/2022 00:49:53'!
+addItemWithExtent: anExtent 
+	
+	| newItem |
+	newItem _ self createItemWithExtent: anExtent.
+	
+	list addItem: newItem.
+	
+	^ newItem.! !
+
+!ADListMorphTest methodsFor: 'exercising' stamp: 'NPM 2/9/2022 00:50:00'!
+handleMouseScrollEventGoing: aDirection 
+	
+	list
+		mouseScroll:  (self createMouseScrollEventGoing: aDirection)
+		localPosition: nil.! !
+
+!ADListMorphTest methodsFor: 'exercising' stamp: 'NPM 2/14/2022 19:47:29'!
+simulateMouseScrollDownEvent
+	
+	self simulateMouseScrollEventGoing: #down! !
+
+!ADListMorphTest methodsFor: 'exercising' stamp: 'NPM 2/14/2022 19:47:04'!
+simulateMouseScrollEventGoing: aDirection
+	
+	| mouseScrollEvent |
+	mouseScrollEvent _ self createMouseScrollEventGoing: aDirection.
+	
+	(list handlesMouseScroll: mouseScrollEvent)
+		ifTrue: [ list mouseScroll: mouseScrollEvent localPosition: nil ]! !
+
+!ADListMorphTest methodsFor: 'exercising' stamp: 'NPM 2/14/2022 19:47:17'!
+simulateMouseScrollUpEvent
+	
+	self simulateMouseScrollEventGoing: #up! !
+
+!ADListMorphTest methodsFor: 'setUp/tearDown' stamp: 'NPM 2/7/2022 09:24:45'!
+setUp
+	
+	super setUp.
+
+	list _ ADListMorph new.
+! !
+
+!ADListMorphTest methodsFor: 'test objects' stamp: 'NPM 2/9/2022 00:49:53'!
+createItemWithExtent: anExtent
+
+	^ KernelMorph new morphExtent: anExtent; color: Color random! !
+
+!ADListMorphTest methodsFor: 'test objects' stamp: 'NPM 2/9/2022 00:50:34'!
+createListWithExtent: anExtent
+
+	list _ ADListMorph new.
+	list morphExtent: anExtent! !
+
+!ADListMorphTest methodsFor: 'test objects' stamp: 'NPM 2/9/2022 00:50:00'!
+createMouseScrollEventGoing: aDirection
+
+	^ MouseScrollEvent new
+		setType: nil
+		position: nil
+		direction: aDirection
+		buttons: nil
+		hand: nil
+		stamp: nil! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/7/2022 09:24:45'!
+test001_ClipsSubmorphs
+
+	self assert: list clipsSubmorphs.! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/9/2022 00:50:30'!
+test002_StacksItems
+
+	| item1 item2 item3 |
+	self createListWithExtent: 50@50.
+	item1 _ self addItemWithExtent: 10@10.
+	item2 _ self addItemWithExtent: 10@10.
+	item3 _ self addItemWithExtent: 10@10.
+
+	list layoutSubmorphs .
+	
+	self assert: item1 isVisibleAt: 0@0.
+	self assert: item2 isVisibleAt: 0@10.
+	self assert: item3 isVisibleAt: 0@20.! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/9/2022 00:50:30'!
+test003_DisplaysAllItemsWhenTheyFitPerfectlyIntheList
+
+	| item1 item2 item3 |
+	self createListWithExtent: 50@30.
+	item1 _ self addItemWithExtent: 10@10.
+	item2 _ self addItemWithExtent: 10@10.
+	item3 _ self addItemWithExtent: 10@10.
+
+	list layoutSubmorphs .
+	
+	self assert: item1 isVisibleAt: 0@0.
+	self assert: item2 isVisibleAt: 0@10.
+	self assert: item3 isVisibleAt: 0@20.! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/9/2022 00:50:30'!
+test004_HidesItemsThatCannotBeDisplayed
+
+	| item1 item2 item3 |
+	self createListWithExtent: 50@20.
+	item1 _ self addItemWithExtent: 10@10.
+	item2 _ self addItemWithExtent: 10@10.
+	item3 _ self addItemWithExtent: 10@10.
+
+	list layoutSubmorphs .
+	
+	self assert: item1 isVisibleAt: 0@0.
+	self assert: item2 isVisibleAt: 0@10.
+	self deny: item3 isVisibleAt: 0@20.! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/9/2022 00:50:30'!
+test005_DisplaysItemsThatArePartiallyVisible
+
+	| item1 |
+	self createListWithExtent: 50@5.
+	item1 _ self addItemWithExtent: 10@10.
+
+	list layoutSubmorphs .
+	
+	self assert: item1 isVisibleAt: 0@0.! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/11/2022 11:21:27'!
+test006_AdjustsItemWidthsToFitTheList
+
+	| item1 |
+	self createListWithExtent: 50@10.
+	item1 _ self addItemWithExtent: 10@10.
+
+	list layoutSubmorphs.
+	
+	self assert: 50 equals: item1 morphWidth.! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/10/2022 10:30:58'!
+test007_DoesNotNeedLayoutAfterLayingOutSubmorphs
+
+	self createListWithExtent: 50@40.
+	
+	list layoutSubmorphs.
+	
+	self deny: list isLayoutNeeded ! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/11/2022 11:00:20'!
+test008_SupportsSpecifyingAnItemSeparator
+
+	| item1 item2 item3 |
+	self createListWithExtent: 50@40.
+	list separateItemsVerticallyBy: 5.
+	item1 _ self addItemWithExtent: 10@10.
+	item2 _ self addItemWithExtent: 10@10.
+	item3 _ self addItemWithExtent: 10@10.
+
+	list layoutSubmorphs .
+	
+	self assert: item1 isVisibleAt: 0@0.
+	self assert: item2 isVisibleAt: 0@15.
+	self assert: item3 isVisibleAt: 0@30! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/11/2022 11:00:49'!
+test009_AppliesTheItemSeparatorAfterTheyWereLayedOut
+
+	| item1 item2 item3 |
+	self createListWithExtent: 50@40.
+	item1 _ self addItemWithExtent: 10@10.
+	item2 _ self addItemWithExtent: 10@10.
+	item3 _ self addItemWithExtent: 10@10.
+	list layoutSubmorphs.
+	
+	list separateItemsVerticallyBy: 5.
+
+	
+	self assert: item1 isVisibleAt: 0@0.
+	self assert: item2 isVisibleAt: 0@15.
+	self assert: item3 isVisibleAt: 0@30! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/11/2022 11:01:11'!
+test010_ItemSeparatorCannotBeNegative
+
+	| item1 item2 item3 |
+	self createListWithExtent: 50@30.
+	item1 _ self addItemWithExtent: 10@10.
+	item2 _ self addItemWithExtent: 10@10.
+	item3 _ self addItemWithExtent: 10@10.
+	list layoutSubmorphs.
+	
+	self
+		should: [ list separateItemsVerticallyBy: -1 ]
+		raise: Error
+		withMessageText: list verticalItemSeparationCannotBeNegativeErrorMessage.
+	
+	self assert: item1 isVisibleAt: 0@0.
+	self assert: item2 isVisibleAt: 0@10.
+	self assert: item3 isVisibleAt: 0@20! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/14/2022 19:46:30'!
+test011a_HandlesUpAndDownScrollEventsWhenItemsShouldBeScrolled
+
+	self createListWithExtent: 10@10.
+	self addItemWithExtent: 10@10.
+	self addItemWithExtent: 10@10.
+	
+	self assertHandlesMouseScrollEventGoing: #up.
+	self assertHandlesMouseScrollEventGoing: #down.
+	self denyHandlesMouseScrollEventGoing: #left.
+	self denyHandlesMouseScrollEventGoing: #right.! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/14/2022 19:46:10'!
+test011b_DoesNotHandleScrollEventsWhenItemsShouldNotBeScrolled
+
+	self createListWithExtent: 10@10.
+	
+	self denyHandlesMouseScrollEventGoing: #up.
+	self denyHandlesMouseScrollEventGoing: #down.
+	self denyHandlesMouseScrollEventGoing: #left.
+	self denyHandlesMouseScrollEventGoing: #right.! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/11/2022 11:01:35'!
+test012_MovesItemsUpOnePlaceWhenScrollingDown
+
+	| item1 item2 item3 |
+	self createListWithExtent: 50@10.
+	item1 _ self addItemWithExtent: 10@10.
+	item2 _ self addItemWithExtent: 10@10.
+	item3 _ self addItemWithExtent: 10@10.
+	list layoutSubmorphs.
+	
+	self simulateMouseScrollDownEvent.
+	
+	self deny: item1 isVisibleAt: 0@-10.
+	self assert: item2 isVisibleAt: 0@0.
+	self deny: item3 isVisibleAt: 0@10.
+	! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/11/2022 11:02:04'!
+test013_ScrollingDownUsesTheFirstVisibleItemHeightAsTheOffsetToMoveItems
+
+	| item1 item2 item3 |
+	self createListWithExtent: 50@10.
+	item1 _ self addItemWithExtent: 10@10.
+	item2 _ self addItemWithExtent: 10@5.
+	item3 _ self addItemWithExtent: 10@10.
+	list layoutSubmorphs.
+	
+	self simulateMouseScrollDownEvent.
+	self simulateMouseScrollDownEvent.
+	
+	self deny: item1 isVisibleAt: 0@-15.
+	self deny: item2 isVisibleAt: 0@-5.
+	self assert: item3 isVisibleAt: 0@0.
+	! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/11/2022 11:02:32'!
+test015_ScrollsDownItemsThatAreTallerThanTheListHeight
+
+	| item1 |
+	self createListWithExtent: 50@10.
+	item1 _ self addItemWithExtent: 10@30.
+	list layoutSubmorphs.
+	
+	self simulateMouseScrollDownEvent.
+	self simulateMouseScrollDownEvent.
+	
+	self assert: item1 isVisibleAt: 0@-20.
+	! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/11/2022 11:03:09'!
+test016_ScrollingDownAnEmptyListDoesNotChangeTheItemsOffset
+
+	| item1 |
+	self createListWithExtent: 50@10.
+	self simulateMouseScrollDownEvent.
+	
+	item1 _ self addItemWithExtent: 10@10.
+	list layoutSubmorphs.
+	
+	self assert: item1 isVisibleAt: 0@0.
+	! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/11/2022 11:03:37'!
+test017_DoesNotScrollPastTheLastItem
+
+	| item1 item2 |
+	self createListWithExtent: 50@10.
+	item1 _ self addItemWithExtent: 10@10.
+	item2 _ self addItemWithExtent: 10@10.
+	list layoutSubmorphs.
+	
+	self simulateMouseScrollDownEvent.
+	self simulateMouseScrollDownEvent.
+	
+	self deny: item1 isVisibleAt: 0@-10.
+	self assert: item2 isVisibleAt: 0@0.
+	! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/14/2022 19:43:18'!
+test018_MovesItemsDownOnePlaceWhenScrollingUp
+
+	| item1 item2 item3 |
+	self createListWithExtent: 50@10.
+	item1 _ self addItemWithExtent: 10@10.
+	item2 _ self addItemWithExtent: 10@10.
+	item3 _ self addItemWithExtent: 10@10.
+	list layoutSubmorphs.
+	self simulateMouseScrollDownEvent.
+	self simulateMouseScrollDownEvent.	
+	
+	self simulateMouseScrollUpEvent.	
+	
+	self deny: item1 isVisibleAt: 0@-10.
+	self assert: item2 isVisibleAt: 0@0.
+	self deny: item3 isVisibleAt: 0@10.
+	! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/11/2022 11:06:10'!
+test019_ScrollingUpUsesTheFirstVisibleItemHeightAsTheOffsetToMoveItems
+
+	| item1 item2 item3 |
+	self createListWithExtent: 50@10.
+	item1 _ self addItemWithExtent: 10@10.
+	item2 _ self addItemWithExtent: 10@5.
+	item3 _ self addItemWithExtent: 10@10.
+	list layoutSubmorphs.
+	self simulateMouseScrollDownEvent.
+	self simulateMouseScrollDownEvent.
+	
+	self simulateMouseScrollUpEvent.
+	self simulateMouseScrollUpEvent.
+	
+	self assert: item1 isVisibleAt: 0@0.
+	self deny: item2 isVisibleAt: 0@10.
+	self deny: item3 isVisibleAt: 0@15.
+	! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/11/2022 11:07:05'!
+test020_ScrollsUpItemsThatAreTallerThanTheListHeight
+
+	| item1 |
+	self createListWithExtent: 50@10.
+	item1 _ self addItemWithExtent: 10@30.
+	list layoutSubmorphs.
+	self simulateMouseScrollDownEvent.
+	self simulateMouseScrollDownEvent.
+	
+	self simulateMouseScrollUpEvent.
+	self simulateMouseScrollUpEvent.
+	
+	self assert: item1 isVisibleAt: 0@0.
+	! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/11/2022 11:07:30'!
+test021_ScrollingUpAnEmptyListDoesNotChangeTheItemsOffset
+
+	| item1 |
+	self createListWithExtent: 50@10.
+	self simulateMouseScrollUpEvent.
+	
+	item1 _ self addItemWithExtent: 10@10.
+	list layoutSubmorphs.
+	
+	self assert: item1 isVisibleAt: 0@0.
+	! !
+
+!ADListMorphTest methodsFor: 'tests' stamp: 'NPM 2/11/2022 11:08:01'!
+test022_DoesNotScrollPastTheFirsttem
+
+	| item1 |
+	self createListWithExtent: 50@10.
+	item1 _ self addItemWithExtent: 10@10.
+	list layoutSubmorphs.
+	
+	self simulateMouseScrollUpEvent.
+	
+	self assert: item1 isVisibleAt: 0@0.
+	! !
+
+!SlidingWindowScrollerTest methodsFor: 'tests - offsets' stamp: 'NPM 2/14/2022 12:20:47'!
+test100_WhenThereIsNothingToScroll_DoesNotAllowToCalculateTheOffset
+
+	| scroller |
+	scroller _ SlidingWindowScroller windowSize: 10.
+	
+	self
+		should: [ scroller offsetUpTo: 1 ]
+		raise: Error
+		withMessageText: scroller nothingToScrollErrorMessage! !
+
+!SlidingWindowScrollerTest methodsFor: 'tests - offsets' stamp: 'NPM 2/14/2022 12:20:47'!
+test101_WhenStepIsZero_OffsetIsZero
+
+	| scroller offset |
+	scroller _ SlidingWindowScroller windowSize: 10.
+	scroller addItemToScroll: 5.
+	
+	offset _ scroller offsetUpTo: 0.
+	
+	self assert: 0 equals: offset.! !
+
+!SlidingWindowScrollerTest methodsFor: 'tests - offsets' stamp: 'NPM 2/14/2022 12:20:47'!
+test102_OffsetCannotBeNegative
+
+	| scroller |
+	scroller _ SlidingWindowScroller windowSize: 10.
+	scroller addItemToScroll: 10.
+	
+	self assertRaisesStepError: [ scroller offsetUpTo: -1 ].! !
+
+!SlidingWindowScrollerTest methodsFor: 'tests - offsets' stamp: 'NPM 2/14/2022 12:20:47'!
+test103_OffsetCannotBeLargerThanTheNumberOfSteps
+
+	| scroller |
+	scroller _ SlidingWindowScroller windowSize: 10.
+	scroller addItemToScroll: 10.
+	
+	self assertRaisesStepError: [ scroller offsetUpTo: 2 ].! !
+
+!SlidingWindowScrollerTest methodsFor: 'tests - offsets' stamp: 'NPM 2/14/2022 12:20:47'!
+test105_OffsetIsTheTotalItemsHeightToBeScrolledAfterTheSpecifiedSteps
+
+	| scroller offset |
+	scroller _ SlidingWindowScroller windowSize: 10.
+	scroller addItemToScroll: 10.
+	scroller addItemToScroll: 10.
+	scroller addItemToScroll: 10.
+	
+	offset _ scroller offsetUpTo: 2.
+	
+	self assert: 20 equals: offset.! !
+
+!SlidingWindowScrollerTest methodsFor: 'tests - offsets' stamp: 'NPM 2/14/2022 12:20:47'!
+test106_OffsetEnsuresAnItemsEndIsAlignedWithTheWindowBottom
+
+
+	"TODO(NPM): Improve this tests, it is not clear what the title means.
+	I'm leaving it as-is atm"
+
+	| scroller offset |
+	scroller _ SlidingWindowScroller windowSize: 10.
+	scroller addItemToScroll: 25.
+	
+	offset _ scroller offsetUpTo: 2.
+	
+	self assert: 15 equals: offset.! !
+
+!SlidingWindowScrollerTest methodsFor: 'tests - steps' stamp: 'NPM 2/13/2022 12:35:57'!
+test001_WhenTheTotalItemsSizeIsZero_NoStepsAreNeededToScrollThem
+
+	| scroller |
+	scroller _ SlidingWindowScroller windowSize: 10.
+	
+	self assert: 0 equals: scroller steps.! !
+
+!SlidingWindowScrollerTest methodsFor: 'tests - steps' stamp: 'NPM 2/13/2022 12:28:49'!
+test002_WhenTheFirstItemsSizeIsGreaterThanTheWindowSize_StepsIsOneLessThatTheNumberOfWindowsNeededToScrollIt
+
+	| scroller |
+	scroller _ SlidingWindowScroller windowSize: 10.
+	
+	scroller addItemToScroll: 29.
+	
+	self assert: 2 equals: scroller steps.! !
+
+!SlidingWindowScrollerTest methodsFor: 'tests - steps' stamp: 'NPM 2/13/2022 12:29:32'!
+test003_WhenTheFirstItemsSizeIsLessThanTheWindowSize_NoStepsAreNeededToScrollIt
+
+	| scroller |
+	scroller _ SlidingWindowScroller windowSize: 10.
+	
+	scroller addItemToScroll: 5.
+	
+	self assert: 0 equals: scroller steps.! !
+
+!SlidingWindowScrollerTest methodsFor: 'tests - steps' stamp: 'NPM 2/13/2022 12:29:48'!
+test004_WhenTheFirstItemsSizeIsEqualToTheWindowSize_NoStepsAreNeededToScrollIt
+
+	| scroller |
+	scroller _ SlidingWindowScroller windowSize: 10.
+	
+	scroller addItemToScroll: 10.
+	
+	self assert: 0 equals: scroller steps.! !
+
+!SlidingWindowScrollerTest methodsFor: 'tests - steps' stamp: 'NPM 2/13/2022 12:32:26'!
+test006_WhenTheTotalItemsSizeIsLessThanTheWindowSize_NoStepsAreNeededToScrollThem
+
+	| scroller |
+	scroller _ SlidingWindowScroller windowSize: 10.
+	
+	scroller addItemToScroll: 2.
+	scroller addItemToScroll: 3.
+	
+	self assert: 0 equals: scroller steps.! !
+
+!SlidingWindowScrollerTest methodsFor: 'tests - steps' stamp: 'NPM 2/13/2022 12:33:22'!
+test007_WhenTheTotalItemsSizeIsEqualToTheWindowSize_NoStepsAreNeededToScrollThem
+
+	| scroller |
+	scroller _ SlidingWindowScroller windowSize: 10.
+	
+	scroller addItemToScroll: 5.
+	scroller addItemToScroll: 5.
+	
+	self assert: 0 equals: scroller steps.! !
+
+!SlidingWindowScrollerTest methodsFor: 'tests - steps' stamp: 'NPM 2/13/2022 12:35:01'!
+test008_WhenTheTotalItemsSizeIsGreaterThanTheWindowSize_StepsIsTheNumberOfWindowsNeededToScrollThem
+
+	| scroller |
+	scroller _ SlidingWindowScroller windowSize: 10.
+	
+	scroller addItemToScroll: 10.
+	scroller addItemToScroll: 10.
+	scroller addItemToScroll: 9.
+	
+	self assert: 2 equals: scroller steps.! !
+
+!SlidingWindowScrollerTest methodsFor: 'assertions' stamp: 'NPM 2/13/2022 16:58:45'!
+assertRaisesStepError: aBlock 
+	
+	self
+		should: aBlock
+		raise: Error
+		withMessageText: (SlidingWindowScroller windowSize: 1) stepErrorMessage! !
 
 !DebuggerExpression methodsFor: 'accessing' stamp: 'NPM 1/5/2022 11:30:05'!
 kind
@@ -1067,6 +1912,97 @@ watchExpressions
 
 	^ watches! !
 
+!SlidingWindowScroller methodsFor: 'initialization' stamp: 'NPM 2/14/2022 12:37:20'!
+initializeWindowSize: aSize 
+	
+	windowSize := aSize.
+	totalHeightToScroll _ 0.
+	itemSeparationGap _ 0.
+	fragmentsToScroll _ OrderedCollection new.! !
+
+!SlidingWindowScroller methodsFor: 'as yet unclassified' stamp: 'NPM 2/14/2022 19:40:51'!
+addItemToScroll: itemSize 
+	
+	| numberOfFullWindowsNeeded remainingSizeToScroll |
+	"test"
+	fragmentsToScroll ifNotEmpty: [
+		itemSeparationGap strictlyPositive ifTrue: [ fragmentsToScroll add: itemSeparationGap ] ].
+	
+	
+	numberOfFullWindowsNeeded _ itemSize div: windowSize.
+	numberOfFullWindowsNeeded timesRepeat: [ fragmentsToScroll add: windowSize ].
+	
+	remainingSizeToScroll _ itemSize mod: windowSize.
+	remainingSizeToScroll strictlyPositive ifTrue: [ 
+		
+		numberOfFullWindowsNeeded strictlyPositive
+			ifTrue: [ fragmentsToScroll add: remainingSizeToScroll beforeIndex: fragmentsToScroll size]
+			ifFalse: [ fragmentsToScroll add: remainingSizeToScroll ] ]
+	
+	! !
+
+!SlidingWindowScroller methodsFor: 'as yet unclassified' stamp: 'NPM 2/14/2022 12:21:03'!
+assertIsValidScrollStep: aScrollStep
+
+	^ (aScrollStep between: 0 and: self steps)
+		ifFalse: [ self error: self stepErrorMessage ]! !
+
+!SlidingWindowScroller methodsFor: 'as yet unclassified' stamp: 'NPM 2/14/2022 12:19:44'!
+assertThereIsContentToScroll
+
+	^ fragmentsToScroll ifEmpty: [ self error: self nothingToScrollErrorMessage ]! !
+
+!SlidingWindowScroller methodsFor: 'as yet unclassified' stamp: 'NPM 2/11/2022 19:30:54'!
+nothingToScrollErrorMessage
+	
+	^ 'There is nothing to scroll'! !
+
+!SlidingWindowScroller methodsFor: 'as yet unclassified' stamp: 'NPM 2/14/2022 12:21:17'!
+offsetUpTo: aScrollStep
+
+	self assertThereIsContentToScroll.
+	self assertIsValidScrollStep: aScrollStep.
+	
+	^ (1 to: aScrollStep) inject: 0 into: [ :offset :step | offset + (fragmentsToScroll at: step) ]! !
+
+!SlidingWindowScroller methodsFor: 'as yet unclassified' stamp: 'NPM 2/14/2022 12:38:29'!
+separateItemsBy: numberOfPixels 
+	
+	itemSeparationGap  _ numberOfPixels ! !
+
+!SlidingWindowScroller methodsFor: 'as yet unclassified' stamp: 'NPM 2/11/2022 19:46:13'!
+stepErrorMessage
+	
+	^'stepErrorMessage'! !
+
+!SlidingWindowScroller methodsFor: 'as yet unclassified' stamp: 'NPM 2/11/2022 19:05:41'!
+steps
+	
+	| numberOfScrollStepsNeeded remainingSizeToScroll |
+	
+	numberOfScrollStepsNeeded _ 0.
+	remainingSizeToScroll _ self totalSizeToScroll.
+	
+	fragmentsToScroll do: [ :size | 
+		remainingSizeToScroll > windowSize 
+			ifTrue: [
+				remainingSizeToScroll _ remainingSizeToScroll - size.
+				numberOfScrollStepsNeeded _ numberOfScrollStepsNeeded + 1 ]].
+		
+	^ numberOfScrollStepsNeeded! !
+
+!SlidingWindowScroller methodsFor: 'as yet unclassified' stamp: 'NPM 2/11/2022 19:05:41'!
+totalSizeToScroll
+
+	^ fragmentsToScroll sum: [ :size | size ] ifEmpty: [ 0 ]! !
+
+!SlidingWindowScroller class methodsFor: 'instance creation' stamp: 'NPM 2/11/2022 18:28:03'!
+windowSize: aHeight 
+	
+	^ self
+		new
+		initializeWindowSize: aHeight ! !
+
 !Debugger methodsFor: '*Tools-AdvancedDebugger' stamp: 'NPM 12/11/2021 00:53:33'!
 openFullAdvancedDebuggerLabeled: aLabelString
 	"Open a full morphic debugger with the given label"
@@ -1127,6 +2063,16 @@ addWatchFromSelection
 	textProvider
 		contextVariablesInspector
 		addWatchToEvaluate: self selection! !
+
+!Morph methodsFor: '*Tools-AdvancedDebugger-UI-Core' stamp: 'NPM 2/9/2022 01:22:45'!
+isWithinOwnerBounds
+	
+	^ self fullBoundsInOwner intersects: self owner morphLocalBounds! !
+
+!ScrollBar methodsFor: '*Tools-AdvancedDebugger-UI-Core' stamp: 'NPM 2/16/2022 00:18:14'!
+numberOfScrollStepsFrom: aScrollValue
+
+	^ (aScrollValue / scrollDelta) rounded.! !
 
 !DynamicMenuBuilder methodsFor: '*Tools-AdvancedDebugger' stamp: 'NPM 12/30/2021 18:28:41'!
 collectMenuOptions

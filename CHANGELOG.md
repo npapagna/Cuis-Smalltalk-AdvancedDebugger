@@ -12,6 +12,7 @@ project does not follow [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Highlight temporary variables when they change.
 * Support for pinning temporary variables (accessed through the temporary variable context menu).
 * Watch expressions. They can be added from the debugger in two ways: `right-clicking on the temporaries panel > Add watch...` or selecting a collaboration in the code editor and `right-click > Add to watches`. 
+* Group watches and temporaries in the temporary variable's inspector.
 
 ## Changed
 * Uses the new `AdvancedDebuggerWindow` instead of the built-in `DebuggerWindow` for opening the debugger.  
