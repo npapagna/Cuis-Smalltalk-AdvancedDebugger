@@ -15,6 +15,7 @@ project does not follow [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Group watches and temporaries in the temporary variable's inspector.
 * Support for adding watch expressions from the temporary variable's context menu.
 * Support for duplicating watches.
+* `thisContext` pseudo-variable to the temporary variables inspector.
 
 ## Changed
 * Uses the new `AdvancedDebuggerWindow` instead of the built-in `DebuggerWindow` for opening the debugger.  

@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4913] on 16 February 2022 at 12:54:58 am'!
+'From Cuis 5.0 [latest update: #4913] on 16 February 2022 at 1:49:07 am'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 13!
+!provides: 'Tools-AdvancedDebugger' 1 14!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 SystemOrganization addCategory: 'Tools-AdvancedDebugger-UI-Core'!
@@ -128,7 +128,7 @@ SlidingWindowScrollerTest class
 
 !classDefinition: #DebuggerExpression category: #'Tools-AdvancedDebugger'!
 Object subclass: #DebuggerExpression
-	instanceVariableNames: 'name context lastReadValue changed isPinnedToDebugger'
+	instanceVariableNames: 'isPinnedToDebugger'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger'!
@@ -136,8 +136,28 @@ Object subclass: #DebuggerExpression
 DebuggerExpression class
 	instanceVariableNames: ''!
 
+!classDefinition: #PseudoVariableDebuggerExpression category: #'Tools-AdvancedDebugger'!
+DebuggerExpression subclass: #PseudoVariableDebuggerExpression
+	instanceVariableNames: 'name value'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger'!
+!classDefinition: 'PseudoVariableDebuggerExpression class' category: #'Tools-AdvancedDebugger'!
+PseudoVariableDebuggerExpression class
+	instanceVariableNames: ''!
+
+!classDefinition: #VariableDebuggerExpression category: #'Tools-AdvancedDebugger'!
+DebuggerExpression subclass: #VariableDebuggerExpression
+	instanceVariableNames: 'name context lastReadValue changed'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Tools-AdvancedDebugger'!
+!classDefinition: 'VariableDebuggerExpression class' category: #'Tools-AdvancedDebugger'!
+VariableDebuggerExpression class
+	instanceVariableNames: ''!
+
 !classDefinition: #TemporaryVariable category: #'Tools-AdvancedDebugger'!
-DebuggerExpression subclass: #TemporaryVariable
+VariableDebuggerExpression subclass: #TemporaryVariable
 	instanceVariableNames: 'index'
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -147,7 +167,7 @@ TemporaryVariable class
 	instanceVariableNames: ''!
 
 !classDefinition: #WatchExpression category: #'Tools-AdvancedDebugger'!
-DebuggerExpression subclass: #WatchExpression
+VariableDebuggerExpression subclass: #WatchExpression
 	instanceVariableNames: 'expressionBlock expression'
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -177,23 +197,33 @@ SlidingWindowScroller class
 	instanceVariableNames: ''!
 
 
-!DebuggerExpression methodsFor: 'accessing' stamp: 'NPM 1/5/2022 02:20:14'!
+!DebuggerExpression methodsFor: 'accessing' stamp: 'NPM 2/16/2022 01:37:22'!
 name
 
-	^ name! !
+	^ self subclassResponsibility! !
 
-!DebuggerExpression methodsFor: 'printing' stamp: 'NPM 1/5/2022 02:20:14'!
+!DebuggerExpression methodsFor: 'printing' stamp: 'NPM 2/16/2022 01:40:35'!
 printOn: aStream
 
 	aStream
 		nextPut: $<;
-		nextPutAll: name;
+		nextPutAll: self name;
 		nextPut: $=;
 		nextPutAll: self value displayStringOrText;
 		nextPut: $>
 		! !
 
-!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/7/2022 22:19:32'!
+!PseudoVariableDebuggerExpression methodsFor: 'accessing' stamp: 'NPM 2/16/2022 01:44:11'!
+name
+
+	^ name! !
+
+!VariableDebuggerExpression methodsFor: 'accessing' stamp: 'NPM 1/5/2022 02:20:14'!
+name
+
+	^ name! !
+
+!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 2/16/2022 01:47:05'!
 actualWatchExpression
 
 	^ DebuggerExpression
@@ -473,7 +503,7 @@ registerToTemporaryVariablesInspectorEvents
 		whenContextChangesSend: #reloadTemporaryVariables
 		to: self! !
 
-!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 2/16/2022 00:46:27'!
+!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 2/16/2022 01:32:51'!
 reloadTemporaryVariables
 		
 	temporaryVariablesMorph removeAllItems.
@@ -489,6 +519,10 @@ reloadTemporaryVariables
 	].
 
 	temporaryVariablesMorph addItem: (SeparatorMorph labeled: 'TEMPORARIES').
+	temporaryVariablesMorph addItem: (DebuggerExpressionMorph
+							forTemporaryVariable: temporaryVariablesInspector thisContextVariable
+							in: temporaryVariablesInspector).
+							
 	(temporaryVariablesInspector pinnedTemporaryVariables, temporaryVariablesInspector temporaryVariables)
 		do: [ :temporaryVariable |
 			temporaryVariablesMorph
@@ -510,7 +544,7 @@ contextMenu
 		yourself
 		! !
 
-!TemporaryVariablesInspectorMorph methodsFor: 'as yet unclassified' stamp: 'NPM 1/10/2022 17:24:03'!
+!TemporaryVariablesInspectorMorph methodsFor: 'as yet unclassified' stamp: 'NPM 2/16/2022 01:47:12'!
 createWatchExpression
 	
 	| newWatchExpression editor |
@@ -1537,17 +1571,122 @@ assertRaisesStepError: aBlock
 		raise: Error
 		withMessageText: (SlidingWindowScroller windowSize: 1) stepErrorMessage! !
 
-!DebuggerExpression methodsFor: 'accessing' stamp: 'NPM 1/5/2022 11:30:05'!
+!DebuggerExpression methodsFor: 'accessing' stamp: 'NPM 2/16/2022 01:36:00'!
 kind
 	
 	self subclassResponsibility! !
 
-!DebuggerExpression methodsFor: 'evaluating' stamp: 'NPM 1/5/2022 02:35:21'!
+!DebuggerExpression methodsFor: 'evaluating' stamp: 'NPM 2/16/2022 01:37:14'!
+value
+
+	self subclassResponsibility! !
+
+!DebuggerExpression methodsFor: 'events-registering' stamp: 'NPM 2/16/2022 01:36:00'!
+changedEventName
+
+	^ #changed! !
+
+!DebuggerExpression methodsFor: 'events-registering' stamp: 'NPM 2/16/2022 01:36:00'!
+triggerChangedEvent
+	
+	self triggerEvent: self changedEventName! !
+
+!DebuggerExpression methodsFor: 'events-registering' stamp: 'NPM 2/16/2022 01:36:00'!
+whenChangesSend: aMessageSelector to: anObject 
+	
+	self
+		when: self changedEventName
+		send: aMessageSelector
+		to: anObject! !
+
+!DebuggerExpression methodsFor: 'initialization' stamp: 'NPM 2/16/2022 01:36:47'!
+initialize
+
+	super initialize. 
+	
+	isPinnedToDebugger _ false.! !
+
+!DebuggerExpression methodsFor: 'pinning to debugger' stamp: 'NPM 2/16/2022 01:36:00'!
+isPinnedToDebugger
+	
+	^ isPinnedToDebugger ! !
+
+!DebuggerExpression methodsFor: 'pinning to debugger' stamp: 'NPM 2/16/2022 01:36:00'!
+togglePinnedToDebugger
+
+	isPinnedToDebugger _ isPinnedToDebugger not.
+	
+	self triggerChangedEvent.! !
+
+!DebuggerExpression methodsFor: 'testing' stamp: 'NPM 2/16/2022 01:44:56'!
+ifChanged: changedBlock ifNotChanged: notChangedBlock 
+	
+	self subclassResponsibility! !
+
+!DebuggerExpression methodsFor: 'testing' stamp: 'NPM 2/16/2022 01:36:13'!
+isNamed: aName
+
+	^ self name = aName! !
+
+!DebuggerExpression class methodsFor: 'instance creation' stamp: 'NPM 2/16/2022 01:43:08'!
+pseudoVariableNamed: aName valued: aValue
+	
+	^ PseudoVariableDebuggerExpression
+		named: aName
+		valued: aValue! !
+
+!DebuggerExpression class methodsFor: 'instance creation' stamp: 'NPM 2/16/2022 01:36:00'!
+temporaryVariablesDefinedIn: aContext 
+	
+	^ TemporaryVariable allDefinedIn: aContext! !
+
+!DebuggerExpression class methodsFor: 'instance creation' stamp: 'NPM 2/16/2022 01:36:00'!
+watchNamed: aName toEvaluate: aBlock in: aContext  
+	
+	^ WatchExpression named: aName toEvaluate: aBlock in: aContext! !
+
+!DebuggerExpression class methodsFor: 'instance creation' stamp: 'NPM 2/16/2022 01:36:00'!
+watchTemplateFor: aContext
+
+	^ WatchExpression templateFor: aContext! !
+
+!PseudoVariableDebuggerExpression methodsFor: 'accessing' stamp: 'NPM 2/16/2022 01:45:40'!
+kind
+	
+	^ 'Pseudo-variable'! !
+
+!PseudoVariableDebuggerExpression methodsFor: 'evaluating' stamp: 'NPM 2/16/2022 01:44:20'!
+value
+
+	^ value! !
+
+!PseudoVariableDebuggerExpression methodsFor: 'initialization' stamp: 'NPM 2/16/2022 01:44:03'!
+initializeNamed: aName valued: aValue 
+
+	super initialize.
+	
+	name := aName.
+	value := aValue.! !
+
+!PseudoVariableDebuggerExpression methodsFor: 'testing' stamp: 'NPM 2/16/2022 01:45:19'!
+ifChanged: changedBlock ifNotChanged: notChangedBlock 
+	
+	^ notChangedBlock value! !
+
+!PseudoVariableDebuggerExpression class methodsFor: 'instance creation' stamp: 'NPM 2/16/2022 01:43:47'!
+named: aName valued: aValue
+
+	^ self
+		new
+		initializeNamed: aName
+		valued: aValue! !
+
+!VariableDebuggerExpression methodsFor: 'evaluating' stamp: 'NPM 1/5/2022 02:35:21'!
 read
 
 	self subclassResponsibility ! !
 
-!DebuggerExpression methodsFor: 'evaluating' stamp: 'NPM 1/5/2022 02:20:14'!
+!VariableDebuggerExpression methodsFor: 'evaluating' stamp: 'NPM 1/5/2022 02:20:14'!
 refresh
 	
 	| previousValue |
@@ -1559,77 +1698,28 @@ refresh
 	
 	! !
 
-!DebuggerExpression methodsFor: 'evaluating' stamp: 'NPM 1/5/2022 02:35:21'!
+!VariableDebuggerExpression methodsFor: 'evaluating' stamp: 'NPM 1/5/2022 02:35:21'!
 value
 
 	lastReadValue _ self read.
 	
 	^ lastReadValue! !
 
-!DebuggerExpression methodsFor: 'events-registering' stamp: 'NPM 1/5/2022 02:20:14'!
-changedEventName
+!VariableDebuggerExpression methodsFor: 'initialization' stamp: 'NPM 2/16/2022 01:41:12'!
+initializeNamed: aName definedIn: aContext
 
-	^ #changed! !
-
-!DebuggerExpression methodsFor: 'events-registering' stamp: 'NPM 1/5/2022 02:20:14'!
-triggerChangedEvent
-	
-	self triggerEvent: self changedEventName! !
-
-!DebuggerExpression methodsFor: 'events-registering' stamp: 'NPM 1/5/2022 02:20:14'!
-whenChangesSend: aMessageSelector to: anObject 
-	
-	self
-		when: self changedEventName
-		send: aMessageSelector
-		to: anObject! !
-
-!DebuggerExpression methodsFor: 'initialization' stamp: 'NPM 1/7/2022 22:06:39'!
-initializeNamed: aName definedIn: aContext 
+	super initialize.
 
 	name _ aName.
 	context _ aContext.
-	changed _ false.
-	isPinnedToDebugger _ false.! !
+	changed _ false.! !
 
-!DebuggerExpression methodsFor: 'pinning to debugger' stamp: 'NPM 1/5/2022 02:20:14'!
-isPinnedToDebugger
-	
-	^ isPinnedToDebugger ! !
-
-!DebuggerExpression methodsFor: 'pinning to debugger' stamp: 'NPM 1/5/2022 02:20:14'!
-togglePinnedToDebugger
-
-	isPinnedToDebugger _ isPinnedToDebugger not.
-	
-	self triggerChangedEvent.! !
-
-!DebuggerExpression methodsFor: 'testing' stamp: 'NPM 2/1/2022 00:17:50'!
+!VariableDebuggerExpression methodsFor: 'testing' stamp: 'NPM 2/1/2022 00:17:50'!
 ifChanged: changedBlock ifNotChanged: notChangedBlock 
 	
 	^ changed 
 		ifTrue: changedBlock
 		ifFalse: notChangedBlock! !
-
-!DebuggerExpression methodsFor: 'testing' stamp: 'NPM 1/5/2022 02:20:14'!
-isNamed: aName
-
-	^ name = aName! !
-
-!DebuggerExpression class methodsFor: 'instance creation' stamp: 'NPM 1/5/2022 02:44:44'!
-temporaryVariablesDefinedIn: aContext 
-	
-	^ TemporaryVariable allDefinedIn: aContext! !
-
-!DebuggerExpression class methodsFor: 'instance creation' stamp: 'NPM 1/5/2022 18:00:12'!
-watchNamed: aName toEvaluate: aBlock in: aContext  
-	
-	^ WatchExpression named: aName toEvaluate: aBlock in: aContext! !
-
-!DebuggerExpression class methodsFor: 'instance creation' stamp: 'NPM 1/7/2022 22:08:24'!
-watchTemplateFor: aContext
-
-	^ WatchExpression templateFor: aContext! !
 
 !TemporaryVariable methodsFor: 'evaluating' stamp: 'NPM 1/5/2022 02:35:21'!
 read
@@ -1901,7 +1991,7 @@ loadTemporaryVariablesFrom: aMethodContext
 	context _ aMethodContext.
 	self refreshWatches; triggerContextChangedEvent! !
 
-!TemporaryVariablesInspector methodsFor: 'temporary variables' stamp: 'NPM 1/5/2022 02:41:36'!
+!TemporaryVariablesInspector methodsFor: 'temporary variables' stamp: 'NPM 2/16/2022 01:47:23'!
 temporaryVariables
 	
 	context ifNil: [ ^ OrderedCollection new ].
@@ -1933,7 +2023,7 @@ addWatch: aWatch
 	aWatch whenRemovedSend: #removeWatch: to: self.
 	self triggerContextChangedEvent! !
 
-!TemporaryVariablesInspector methodsFor: 'watches' stamp: 'NPM 2/16/2022 00:35:31'!
+!TemporaryVariablesInspector methodsFor: 'watches' stamp: 'NPM 2/16/2022 01:47:18'!
 addWatchToEvaluate: aSmalltalkExpression 
 	
 	| watch |
@@ -1972,6 +2062,13 @@ removeWatch: aWatchExpression
 watchExpressions
 
 	^ watches! !
+
+!TemporaryVariablesInspector methodsFor: 'as yet unclassified' stamp: 'NPM 2/16/2022 01:42:39'!
+thisContextVariable
+	
+	^ DebuggerExpression
+		pseudoVariableNamed: 'thisContext'
+		valued: context! !
 
 !SlidingWindowScroller methodsFor: 'initialization' stamp: 'NPM 2/14/2022 12:37:20'!
 initializeWindowSize: aSize 
