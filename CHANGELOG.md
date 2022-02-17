@@ -18,7 +18,8 @@ project does not follow [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * `thisContext` pseudo-variable to the temporary variables inspector.
 * Watch editor shortcuts: `meta + s` to accept and `esc` to cancel the dialog.
 * Context menu item and shortcut (double-click) for inspecting temporaries/watches values. 
-* Context menu item and shortcut (shift + double-click) for editing watches. 
+* Context menu item and shortcut (shift + double-click) for editing watches.
+* Support for evaluating expressions in the debugger's context. It is available via the temporary variable's inspector context menu > `Evaluate expression...`.
 
 ## Changed
 * Uses the new `AdvancedDebuggerWindow` instead of the built-in `DebuggerWindow` for opening the debugger.  
