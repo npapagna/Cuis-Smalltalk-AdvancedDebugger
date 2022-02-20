@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4913] on 17 February 2022 at 3:11:26 am'!
+'From Cuis 5.0 [latest update: #4913] on 20 February 2022 at 9:55:35 am'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 18!
+!provides: 'Tools-AdvancedDebugger' 1 19!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 SystemOrganization addCategory: 'Tools-AdvancedDebugger-UI-Core'!
@@ -873,12 +873,22 @@ model: aModel
 initialExtent
 	^`540@300` * Preferences standardCodeFont lineSpacing // 14! !
 
-!EvaluateExpressionWindow class methodsFor: 'as yet unclassified' stamp: 'NPM 2/17/2022 02:56:09'!
-openOn: aMethodContext 
+!EvaluateExpressionWindow class methodsFor: 'instance creation' stamp: 'NPM 2/20/2022 09:50:04'!
+open: anExpressionEditor 
 	
 	^ self
-		open: (ExpressionEditor on: aMethodContext)
+		open: anExpressionEditor
 		label: 'Evaluate Expression'! !
+
+!EvaluateExpressionWindow class methodsFor: 'instance creation' stamp: 'NPM 2/20/2022 09:54:52'!
+openOn: aMethodContext 
+	
+	^ self openToEvaluate: '' in: aMethodContext! !
+
+!EvaluateExpressionWindow class methodsFor: 'instance creation' stamp: 'NPM 2/20/2022 09:51:39'!
+openToEvaluate: anExpression in: aMethodContext 
+	
+	^ self open: ((ExpressionEditor on: aMethodContext) actualContents: anExpression)! !
 
 !WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/6/2022 20:17:35'!
 buildAcceptButton
@@ -1003,7 +1013,7 @@ openToEdit: aWatchExpression
 		label:  'Edit Watch Expression'
 		onAcceptDo: []! !
 
-!WatchExpressionEditorWindow class methodsFor: 'menu' stamp: 'NPM 1/6/2022 20:11:38'!
+!WatchExpressionEditorWindow class methodsFor: 'menu' stamp: 'NPM 2/20/2022 09:53:40'!
 smalltalkEditorMenuOptions
 
 	^`{
@@ -1012,6 +1022,12 @@ smalltalkEditorMenuOptions
 				#itemOrder 		-> 		11.
 				#label 			-> 		'Add to watches'.
 				#selector 		-> 		#addWatchFromSelection.
+			} asDictionary.
+			{
+				#itemGroup 		-> 		11.
+				#itemOrder 		-> 		12.
+				#label 			-> 		'Evaluator...'.
+				#selector 		-> 		#evaluateSelection.
 			} asDictionary.
 			
 		}`! !
@@ -2566,6 +2582,22 @@ addWatchFromSelection
 	textProvider
 		contextVariablesInspector
 		addWatchToEvaluate: self selection! !
+
+!SmalltalkEditor methodsFor: '*Tools-AdvancedDebugger' stamp: 'NPM 2/20/2022 09:53:35'!
+evaluateSelection
+	
+	| textProvider |
+	(model isKindOf: PluggableTextModel)
+		ifFalse:  [ ^ self inform: 'The evaluator can only be opened from the Debugger' ].
+	
+	textProvider _ model textProvider.
+	
+	(textProvider isKindOf: Debugger)
+		ifFalse:  [ ^ self inform: 'The evaluator can only be opened from the Debugger' ].
+	
+	EvaluateExpressionWindow
+		openToEvaluate: self selection
+		in: textProvider contextVariablesInspector doItContext! !
 
 !Morph methodsFor: '*Tools-AdvancedDebugger-UI-Core' stamp: 'NPM 2/9/2022 01:22:45'!
 isWithinOwnerBounds
