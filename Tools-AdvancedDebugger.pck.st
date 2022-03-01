@@ -1,24 +1,14 @@
-'From Cuis 5.0 [latest update: #4913] on 20 February 2022 at 9:55:35 am'!
+'From Cuis 5.0 [latest update: #4913] on 1 March 2022 at 1:10:43 pm'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 19!
+!provides: 'Tools-AdvancedDebugger' 1 20!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 SystemOrganization addCategory: 'Tools-AdvancedDebugger-UI-Core'!
 
 
-!classDefinition: #ExpressionEditor category: #'Tools-AdvancedDebugger'!
-Workspace subclass: #ExpressionEditor
-	instanceVariableNames: 'context acceptedWatchExpression acceptedWatchName'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Tools-AdvancedDebugger'!
-!classDefinition: 'ExpressionEditor class' category: #'Tools-AdvancedDebugger'!
-ExpressionEditor class
-	instanceVariableNames: ''!
-
 !classDefinition: #WatchExpressionEditor category: #'Tools-AdvancedDebugger'!
 Workspace subclass: #WatchExpressionEditor
-	instanceVariableNames: 'context acceptedWatchExpression acceptedWatchName'
+	instanceVariableNames: 'context watchExpression acceptedWatchName'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger'!
@@ -98,7 +88,7 @@ EvaluateExpressionWindow class
 
 !classDefinition: #WatchExpressionEditorWindow category: #'Tools-AdvancedDebugger-UI'!
 SystemWindow subclass: #WatchExpressionEditorWindow
-	instanceVariableNames: 'acceptBlock resultLabel nameInput'
+	instanceVariableNames: 'acceptBlock'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger-UI'!
@@ -106,14 +96,14 @@ SystemWindow subclass: #WatchExpressionEditorWindow
 WatchExpressionEditorWindow class
 	instanceVariableNames: ''!
 
-!classDefinition: #ExpressionEditorMorph category: #'Tools-AdvancedDebugger-UI'!
-WidgetMorph subclass: #ExpressionEditorMorph
-	instanceVariableNames: 'expressionEditor layoutMorph resultLabel acceptAction cancelAction'
+!classDefinition: #WatchExpressionEditorMorph category: #'Tools-AdvancedDebugger-UI'!
+WidgetMorph subclass: #WatchExpressionEditorMorph
+	instanceVariableNames: 'watchExpressionEditor layoutMorph resultLabel acceptAction cancelAction nameInput showNameAndActionButtons'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger-UI'!
-!classDefinition: 'ExpressionEditorMorph class' category: #'Tools-AdvancedDebugger-UI'!
-ExpressionEditorMorph class
+!classDefinition: 'WatchExpressionEditorMorph class' category: #'Tools-AdvancedDebugger-UI'!
+WatchExpressionEditorMorph class
 	instanceVariableNames: ''!
 
 !classDefinition: #ADListMorph category: 'Tools-AdvancedDebugger-UI-Core'!
@@ -253,129 +243,7 @@ name
 
 	^ name! !
 
-!ExpressionEditor methodsFor: 'accessing' stamp: 'NPM 2/17/2022 00:27:03'!
-doItContext
-	"Answer the object that should be informed of the result of evaluating a
-	text selection."
-
-	^ context ! !
-
-!ExpressionEditor methodsFor: 'accessing' stamp: 'NPM 2/17/2022 00:27:03'!
-doItReceiver
-	"Answer the object that should be informed of the result of evaluating a
-	text selection."
-
-	^ context receiver! !
-
-!ExpressionEditor methodsFor: 'commands' stamp: 'NPM 2/17/2022 02:48:52'!
-acceptContentsFrom: aTextModelMorph
-
-	self triggerContentsAcceptedEvent.! !
-
-!ExpressionEditor methodsFor: 'commands' stamp: 'NPM 2/17/2022 03:00:03'!
-cancelContents
-	
-	self triggerContentsCancelledEvent ! !
-
-!ExpressionEditor methodsFor: 'evaluating' stamp: 'NPM 2/17/2022 02:43:52'!
-evaluateExpressionBlock
-	
-	| compiler method methodNode sourceCode |
-	sourceCode _ String streamContents: [ :stream |
-		Scanner selectionDoItSourceCodeHeaderWithContext: context notNil into: stream.
-		stream nextPutAll: self actualContents ].
-	
-	methodNode _ [
-		compiler _ Compiler new.
-		compiler		
-			compileDoIt: sourceCode
-			in: context receiver class
-			context: context
-			notifying: nil
-			ifFail: [ self halt. ]]
-		on: OutOfScopeNotification
-		do: [ :ex | ex resume: true ].
-
-	methodNode block returnLast.
-	method _ methodNode generate.
-	method methodNode: methodNode.
-	
-	
-	^ [ compiler
-		evaluateMethod: method
-		to: context receiver
-		logged: true
-		profiled: false. ]! !
-
-!ExpressionEditor methodsFor: 'evaluating' stamp: 'NPM 2/17/2022 02:43:52'!
-value
-
-	^ self evaluateExpressionBlock value! !
-
-!ExpressionEditor methodsFor: 'events-names' stamp: 'NPM 2/17/2022 02:58:05'!
-contentsAcceptedEventName
-
-	^ #contentsAccepted! !
-
-!ExpressionEditor methodsFor: 'events-names' stamp: 'NPM 2/17/2022 02:58:48'!
-contentsCancelledEventName
-
-	^ #contentsCancelled! !
-
-!ExpressionEditor methodsFor: 'events-registering' stamp: 'NPM 2/17/2022 02:58:05'!
-whenContentsAreAcceptedSend: aSelector to: anObject
-
-	self
-		when: self contentsAcceptedEventName
-		send: aSelector
-		to: anObject! !
-
-!ExpressionEditor methodsFor: 'events-registering' stamp: 'NPM 2/17/2022 02:58:48'!
-whenContentsAreCancelledSend: aSelector to: anObject 
-	
-	self
-		when: self contentsCancelledEventName
-		send: aSelector
-		to: anObject! !
-
-!ExpressionEditor methodsFor: 'events-triggering' stamp: 'NPM 2/17/2022 02:58:05'!
-triggerContentsAcceptedEvent
-	
-	self triggerEvent: self contentsAcceptedEventName! !
-
-!ExpressionEditor methodsFor: 'events-triggering' stamp: 'NPM 2/17/2022 03:00:19'!
-triggerContentsCancelledEvent
-	
-	self triggerEvent: self contentsCancelledEventName! !
-
-!ExpressionEditor methodsFor: 'initialization' stamp: 'NPM 2/17/2022 02:56:24'!
-initializeOn: aMethodContext 
-
-	context _ aMethodContext.
-
-	aMethodContext tempNames withIndexDo: [ :temporaryName :temporaryIndex| 
-		bindings
-			at: temporaryName
-			put: (aMethodContext debuggerMap namedTempAt: temporaryIndex in: aMethodContext) ]! !
-
-!ExpressionEditor class methodsFor: 'instance creation' stamp: 'NPM 2/17/2022 02:56:24'!
-on: aMethodContext 
-	
-	^ self
-		new
-		initializeOn: aMethodContext ! !
-
-!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 2/16/2022 02:55:41'!
-acceptContentsFrom: aTextModelMorph
-
-	| owningWindow |
-	owningWindow _ aTextModelMorph owningWindow.
-	
-	self assert: owningWindow class = WatchExpressionEditorWindow.
-	
-	owningWindow accept.! !
-
-!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 2/16/2022 01:47:05'!
+!WatchExpressionEditor methodsFor: 'accessing' stamp: 'NPM 2/16/2022 01:47:05'!
 actualWatchExpression
 
 	^ DebuggerExpression
@@ -383,14 +251,36 @@ actualWatchExpression
 		toEvaluate: self actualContents
 		in: context! !
 
-!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/7/2022 22:19:41'!
+!WatchExpressionEditor methodsFor: 'accessing' stamp: 'NPM 2/22/2022 02:52:55'!
+cancelContents
+	
+	self triggerEditsCancelledEvent ! !
+
+!WatchExpressionEditor methodsFor: 'accessing' stamp: 'NPM 1/7/2022 22:19:32'!
+watchName
+	
+	^ acceptedWatchName! !
+
+!WatchExpressionEditor methodsFor: 'commands' stamp: 'NPM 2/22/2022 02:49:02'!
+acceptContentsFrom: aTextModelMorph
+
+	self triggerExpressionAcceptedEvent.! !
+
+!WatchExpressionEditor methodsFor: 'editing' stamp: 'NPM 2/22/2022 02:54:40'!
 applyEdits
 	
-	acceptedWatchExpression
+	watchExpression
 		renameTo: acceptedWatchName
-		andChangeExpressionTo: self actualContents .! !
+		andChangeExpressionTo: self actualContents.
+	
+	self triggerEditsAcceptedEvent.! !
 
-!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/30/2022 11:24:48'!
+!WatchExpressionEditor methodsFor: 'editing' stamp: 'NPM 1/10/2022 17:19:40'!
+renameWatch: newName 
+	
+	acceptedWatchName _ newName.! !
+
+!WatchExpressionEditor methodsFor: 'evaluating' stamp: 'NPM 1/30/2022 11:24:48'!
 context: aMethodContext 
 
 	context _ aMethodContext.
@@ -400,39 +290,89 @@ context: aMethodContext
 			at: temporaryName
 			put: (aMethodContext debuggerMap namedTempAt: temporaryIndex in: aMethodContext) ]! !
 
-!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/1/2022 12:49:38'!
+!WatchExpressionEditor methodsFor: 'evaluating' stamp: 'NPM 1/1/2022 12:49:38'!
 doItContext
 	"Answer the object that should be informed of the result of evaluating a
 	text selection."
 
 	^ context ! !
 
-!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/4/2022 11:40:10'!
+!WatchExpressionEditor methodsFor: 'evaluating' stamp: 'NPM 1/4/2022 11:40:10'!
 doItReceiver
 	"Answer the object that should be informed of the result of evaluating a
 	text selection."
 
 	^ context receiver! !
 
-!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/10/2022 17:19:40'!
-renameWatch: newName 
-	
-	acceptedWatchName _ newName.! !
+!WatchExpressionEditor methodsFor: 'events-names' stamp: 'NPM 2/22/2022 02:53:57'!
+editsAcceptedEventName
 
-!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/7/2022 22:19:48'!
-watchExpression: aWatchExpression 
+	^ #editsAccepted! !
+
+!WatchExpressionEditor methodsFor: 'events-names' stamp: 'NPM 2/22/2022 02:53:04'!
+editsCancelledEventName
+
+	^ #contentsCancelled! !
+
+!WatchExpressionEditor methodsFor: 'events-names' stamp: 'NPM 2/22/2022 02:55:11'!
+expressionAcceptedEventName
+
+	^ #expressionAccepted! !
+
+!WatchExpressionEditor methodsFor: 'events-registering' stamp: 'NPM 2/22/2022 02:54:10'!
+whenEditsAreAcceptedSend: aSelector to: anObject 
 	
+	self
+		when: self editsAcceptedEventName
+		send: aSelector
+		to: anObject! !
+
+!WatchExpressionEditor methodsFor: 'events-registering' stamp: 'NPM 2/22/2022 02:53:18'!
+whenEditsAreCancelledSend: aSelector to: anObject 
 	
-	acceptedWatchExpression _ aWatchExpression.
-	acceptedWatchName _ acceptedWatchExpression name.
+	self
+		when: self editsCancelledEventName
+		send: aSelector
+		to: anObject! !
+
+!WatchExpressionEditor methodsFor: 'events-registering' stamp: 'NPM 2/22/2022 02:48:44'!
+whenExpressionIsAcceptedSend: aSelector to: anObject
+
+	self
+		when: self expressionAcceptedEventName
+		send: aSelector
+		to: anObject! !
+
+!WatchExpressionEditor methodsFor: 'events-triggering' stamp: 'NPM 2/22/2022 02:54:25'!
+triggerEditsAcceptedEvent
+	
+	self triggerEvent: self editsAcceptedEventName! !
+
+!WatchExpressionEditor methodsFor: 'events-triggering' stamp: 'NPM 2/22/2022 02:53:04'!
+triggerEditsCancelledEvent
+	
+	self triggerEvent: self editsCancelledEventName! !
+
+!WatchExpressionEditor methodsFor: 'events-triggering' stamp: 'NPM 2/22/2022 02:49:02'!
+triggerExpressionAcceptedEvent
+	
+	self triggerEvent: self expressionAcceptedEventName! !
+
+!WatchExpressionEditor methodsFor: 'initialization' stamp: 'NPM 2/22/2022 02:26:15'!
+initializeOn: aWatchExpression 
+	
+	watchExpression _ aWatchExpression.
+	acceptedWatchName _ watchExpression name copy.
 	
 	self context: aWatchExpression context.
 	self actualContents: aWatchExpression expression.! !
 
-!WatchExpressionEditor methodsFor: 'as yet unclassified' stamp: 'NPM 1/7/2022 22:19:32'!
-watchName
-	
-	^ acceptedWatchName! !
+!WatchExpressionEditor class methodsFor: 'instance creation' stamp: 'NPM 2/22/2022 01:57:14'!
+on: aWatchExpression 
+
+	^ self 
+		new
+		initializeOn: aWatchExpression! !
 
 !ContextVariablesInspectorToTemporaryVariablesInspectorAdapter methodsFor: 'accessing' stamp: 'NPM 2/1/2022 00:21:03'!
 object: aMethodContext 
@@ -849,18 +789,17 @@ buildMorphicWindow
 		addAdjusterAndMorph: self buildLowerPanes proportionalHeight: 0.55;
 		addAdjusterAndMorph: bottomMorph proportionalHeight: 0.2! !
 
-!EvaluateExpressionWindow methodsFor: 'GUI building' stamp: 'NPM 2/17/2022 02:55:31'!
+!EvaluateExpressionWindow methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:38:59'!
 buildMorphicWindow
 	
-	layoutMorph addMorphUseAll: (ExpressionEditorMorph model: model)! !
+	layoutMorph
+		addMorphUseAll: (WatchExpressionEditorMorph model: model showNameAndActionButtons: false)! !
 
-!EvaluateExpressionWindow methodsFor: 'events-registering' stamp: 'NPM 2/17/2022 02:55:43'!
+!EvaluateExpressionWindow methodsFor: 'events-registering' stamp: 'NPM 2/22/2022 02:53:18'!
 listenToExpressionEditorEvents
 
 	^ model ifNotNil: [
-		model
-			whenContentsAreAcceptedSend: #closeBoxHit to: self;
-			whenContentsAreCancelledSend: #closeBoxHit to: self ]! !
+		model whenEditsAreCancelledSend: #closeBoxHit to: self ]! !
 
 !EvaluateExpressionWindow methodsFor: 'initialization' stamp: 'NPM 2/17/2022 02:55:05'!
 model: aModel
@@ -885,116 +824,48 @@ openOn: aMethodContext
 	
 	^ self openToEvaluate: '' in: aMethodContext! !
 
-!EvaluateExpressionWindow class methodsFor: 'instance creation' stamp: 'NPM 2/20/2022 09:51:39'!
+!EvaluateExpressionWindow class methodsFor: 'instance creation' stamp: 'NPM 2/22/2022 02:32:30'!
 openToEvaluate: anExpression in: aMethodContext 
+
+	| editor watchExpression |
+	watchExpression _ DebuggerExpression watchNamed: '' toEvaluate: anExpression in: aMethodContext.
+	editor _ WatchExpressionEditor on: (watchExpression).
 	
-	^ self open: ((ExpressionEditor on: aMethodContext) actualContents: anExpression)! !
+	^ self open: editor! !
 
-!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/6/2022 20:17:35'!
-buildAcceptButton
-
-	^ PluggableButtonMorph model: self action: #accept label: 'Accept'! !
-
-!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/6/2022 20:17:42'!
-buildCancelButton
-
-	^ PluggableButtonMorph model: self action: #cancel label: 'Cancel'! !
-
-!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/6/2022 21:05:14'!
-buildLabel: aLabel
-
-	^ (LabelMorph contents: aLabel) emphasis: 1! !
-
-!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 2/16/2022 02:57:36'!
-buildMorphicCodePane
-
-	^ (TextModelMorph withModel: model)
-		askBeforeDiscardingEdits: false;
-		"NPM: Refresh actual contents because model always have an expression (either a template or an actual expression if an existing watch is being edited).
-		 If I don't do this, code will not be sytled the first time the window is opened."
-		updateActualContents;
-		hasUnacceptedEdits: true;
-		escAction: [ self cancel ]! !
-
-!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/6/2022 21:23:16'!
+!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:38:30'!
 buildMorphicWindow
 
-	resultLabel _ LabelMorph contents: ''.
-
 	self layoutMorph
-		addMorphKeepMorphHeight: (self buildLabel:  'Name');
-		addMorph: self buildNameInput fixedHeight: self defaultButtonPaneHeight;
-		addMorphKeepMorphHeight: (self buildLabel:  'Expression');
-		addMorphUseAll: self buildMorphicCodePane;
-		addMorphKeepMorphHeight: (self buildLabel:  'Result (live updated)');
-		addMorph: resultLabel fixedHeight: (self defaultButtonPaneHeight * 2);
-		addMorph: self buildToolbar fixedHeight: self defaultButtonPaneHeight.
-		
-	! !
+		addMorphUseAll: (WatchExpressionEditorMorph model: model showNameAndActionButtons: true)	! !
 
-!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/7/2022 17:46:34'!
-buildNameInput
+!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:54:55'!
+model: anObject
 
-	^ nameInput _ (TextModelMorph textProvider: model textGetter: #watchName textSetter: #renameWatch:) askBeforeDiscardingEdits: false! !
-
-!WatchExpressionEditorWindow methodsFor: 'GUI building' stamp: 'NPM 1/6/2022 20:32:30'!
-buildToolbar
+	super model: anObject.
 	
-	^ LayoutMorph newRow
-		addMorph: self buildAcceptButton;
-		addMorph: self buildCancelButton! !
+	anObject ifNotNil: [
+		anObject
+			whenEditsAreAcceptedSend: #accept to: self;
+			whenEditsAreCancelledSend: #closeBoxHit to: self ]! !
 
-!WatchExpressionEditorWindow methodsFor: 'actions' stamp: 'NPM 1/10/2022 17:28:57'!
+!WatchExpressionEditorWindow methodsFor: 'actions' stamp: 'NPM 2/22/2022 02:20:38'!
 accept
 	
-	nameInput editor acceptContents.
-	model applyEdits.
 	acceptBlock value.
 	
 	self closeBoxHit.
 ! !
-
-!WatchExpressionEditorWindow methodsFor: 'actions' stamp: 'NPM 1/4/2022 10:48:28'!
-cancel
-
-	 self closeBoxHit! !
 
 !WatchExpressionEditorWindow methodsFor: 'initialization' stamp: 'NPM 1/10/2022 17:28:33'!
 acceptBlock: aBlock 
 	
 	acceptBlock _ aBlock ! !
 
-!WatchExpressionEditorWindow methodsFor: 'stepping' stamp: 'NPM 1/7/2022 22:18:32'!
-stepAt: millisecondSinceLast
-
-	| result |
-	result _ [ 
-		[ model actualWatchExpression value displayStringOrText ]
-			valueWithin: 500 milliSeconds
-			onTimeout: [  'evaluation timed out' ] ]
-		on: Error
-		do: [ 'evaluation failed' ].
-		
-	resultLabel contents: result 
-	
-	! !
-
-!WatchExpressionEditorWindow methodsFor: 'stepping' stamp: 'NPM 1/6/2022 21:22:24'!
-stepTime
-
-	^ 150 "milliseconds"! !
-
-!WatchExpressionEditorWindow methodsFor: 'stepping' stamp: 'NPM 1/6/2022 21:15:00'!
-wantsSteps
-	"Return true if the receiver wants to its #step or #stepAt: methods be run ALL THE TIME.
-	Morphs that send #startStepping and #stopStepping at appropriate times (i.e. when they are already in the world!!) don't need to answer true to this message"
-
-	^true! !
-
-!WatchExpressionEditorWindow class methodsFor: 'instance creation' stamp: 'NPM 1/10/2022 17:25:35'!
+!WatchExpressionEditorWindow class methodsFor: 'instance creation' stamp: 'NPM 2/22/2022 01:56:24'!
 open: aWatchExpression label: aLabel onAcceptDo: acceptBlock
 	
-	^ (self open: (WatchExpressionEditor new watchExpression: aWatchExpression) label: aLabel)
+	^ (self open: (WatchExpressionEditor on: aWatchExpression) label: aLabel)
 		acceptBlock: acceptBlock! !
 
 !WatchExpressionEditorWindow class methodsFor: 'instance creation' stamp: 'NPM 1/10/2022 17:25:30'!
@@ -1032,45 +903,109 @@ smalltalkEditorMenuOptions
 			
 		}`! !
 
-!ExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/17/2022 00:39:16'!
-buildLabel: aLabel
+!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:30:16'!
+buildAcceptButton
+
+	^ PluggableButtonMorph
+		model: self
+		action: #accept
+		label: 'Accept'! !
+
+!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:37:55'!
+buildActionButtons
+	
+	| actionButtons |
+	showNameAndActionButtons ifFalse: [ ^ self ].
+	
+	actionButtons _ LayoutMorph newRow
+		addMorph: self buildAcceptButton;
+		addMorph: self buildCancelButton.
+		
+	layoutMorph 
+		addMorph: actionButtons fixedHeight: self defaultButtonPaneHeight.! !
+
+!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:30:07'!
+buildCancelButton
+	
+	^ PluggableButtonMorph
+		model: watchExpressionEditor
+		action: #cancelContents
+		label: 'Cancel'! !
+
+!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:30:57'!
+buildExpressionInput
+	
+	layoutMorph
+		addMorphKeepMorphHeight: (self buildHeader:  'Expression');
+		addMorphUseAll: self buildMorphicCodePane! !
+
+!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:30:57'!
+buildHeader: aLabel
 
 	^ (LabelMorph contents: aLabel) emphasis: 1! !
 
-!ExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/17/2022 02:48:09'!
+!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:03:02'!
+buildLayout
+	
+	layoutMorph _ LayoutMorph newColumn.
+	
+	self addMorph: layoutMorph.! !
+
+!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:01:49'!
 buildMorphicCodePane
 
-	^ (TextModelMorph withModel: expressionEditor)
+	^ (TextModelMorph withModel: watchExpressionEditor)
 		askBeforeDiscardingEdits: false;
 		"NPM: Refresh actual contents because model always have an expression (either a template or an actual expression if an existing watch is being edited).
 		 If I don't do this, code will not be sytled the first time the window is opened."
 		updateActualContents;
 		hasUnacceptedEdits: true;
-		escAction: [ expressionEditor cancelContents ]! !
+		escAction: [ watchExpressionEditor cancelContents ]! !
 
-!ExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/17/2022 02:28:12'!
-buildSubmorphs
+!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:37:43'!
+buildNameInput
+	
+	nameInput _ (TextModelMorph
+		textProvider: watchExpressionEditor
+		textGetter: #watchName
+		textSetter: #renameWatch:)
+		askBeforeDiscardingEdits: false.
+		
+	showNameAndActionButtons ifFalse: [ ^ self ].
+		
+	layoutMorph
+		addMorphKeepMorphHeight: (self buildHeader:  'Name');
+		addMorph: nameInput fixedHeight: self defaultButtonPaneHeight! !
 
-	layoutMorph _ LayoutMorph newColumn.
-	self addMorph: layoutMorph.
+!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:30:57'!
+buildResultPanel
 	
 	resultLabel _ LabelMorph contents: ''.
 
 	layoutMorph
-		addMorphKeepMorphHeight: (self buildLabel:  'Expression');
-		addMorphUseAll: self buildMorphicCodePane;
-		addMorphKeepMorphHeight: (self buildLabel:  'Result (live updated)');
+		addMorphKeepMorphHeight: (self buildHeader:  'Result (live updated)');
 		addMorph: resultLabel fixedHeight: (self defaultButtonPaneHeight * 2)
 		
 	! !
 
-!ExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/17/2022 01:52:36'!
+!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:47:46'!
+buildSubmorphs
+
+	self
+		buildLayout;
+		buildNameInput;
+		buildExpressionInput;
+		buildResultPanel;
+		buildActionButtons.
+	watchExpressionEditor whenExpressionIsAcceptedSend: #accept to: self. ! !
+
+!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/17/2022 01:52:36'!
 defaultButtonPaneHeight
 	"Answer the user's preferred default height for new button panes."
 
 	^ Theme current buttonPaneHeight! !
 
-!ExpressionEditorMorph methodsFor: 'accessing' stamp: 'NPM 2/17/2022 02:02:21'!
+!WatchExpressionEditorMorph methodsFor: 'accessing' stamp: 'NPM 2/17/2022 02:02:21'!
 adoptWidgetsColor: paneColor
 
 	color = self defaultColor ifTrue: [
@@ -1080,34 +1015,33 @@ adoptWidgetsColor: paneColor
 	super adoptWidgetsColor: paneColor.
 	! !
 
-!ExpressionEditorMorph methodsFor: 'actions' stamp: 'NPM 2/17/2022 00:39:16'!
+!WatchExpressionEditorMorph methodsFor: 'actions' stamp: 'NPM 2/22/2022 02:27:11'!
 accept
-	
-	acceptBlock value: model value.
-	
-	self closeBoxHit.
-! !
 
-!ExpressionEditorMorph methodsFor: 'initialization' stamp: 'NPM 2/17/2022 02:45:44'!
-initializeModel: anExpressionEditor   
+	nameInput editor acceptContents.
+	watchExpressionEditor applyEdits.! !
+
+!WatchExpressionEditorMorph methodsFor: 'initialization' stamp: 'NPM 2/22/2022 02:36:33'!
+initializeModel: aWatchExpressionEditor showNameAndActionButtons: aBoolean    
 	
-	expressionEditor := anExpressionEditor.
+	watchExpressionEditor _ aWatchExpressionEditor.
+	showNameAndActionButtons _ aBoolean.
 	
 	self
 		borderWidth: 0;
 		buildSubmorphs .! !
 
-!ExpressionEditorMorph methodsFor: 'layout' stamp: 'NPM 2/17/2022 01:53:47'!
+!WatchExpressionEditorMorph methodsFor: 'layout' stamp: 'NPM 2/17/2022 01:53:47'!
 layoutSubmorphs
 
 	layoutMorph morphPosition: 0@0 extent: self morphExtent! !
 
-!ExpressionEditorMorph methodsFor: 'stepping' stamp: 'NPM 2/17/2022 01:55:06'!
+!WatchExpressionEditorMorph methodsFor: 'stepping' stamp: 'NPM 2/22/2022 02:01:49'!
 stepAt: millisecondSinceLast
 
 	| result |
 	result _ [ 
-		[ expressionEditor value displayStringOrText ]
+		[ watchExpressionEditor actualWatchExpression value displayStringOrText ]
 			valueWithin: 500 milliSeconds
 			onTimeout: [  'evaluation timed out' ] ]
 		on: Error
@@ -1117,24 +1051,23 @@ stepAt: millisecondSinceLast
 	
 	! !
 
-!ExpressionEditorMorph methodsFor: 'stepping' stamp: 'NPM 2/17/2022 00:39:16'!
+!WatchExpressionEditorMorph methodsFor: 'stepping' stamp: 'NPM 2/17/2022 00:39:16'!
 stepTime
 
 	^ 150 "milliseconds"! !
 
-!ExpressionEditorMorph methodsFor: 'stepping' stamp: 'NPM 2/17/2022 00:39:16'!
+!WatchExpressionEditorMorph methodsFor: 'stepping' stamp: 'NPM 2/22/2022 02:31:49'!
 wantsSteps
-	"Return true if the receiver wants to its #step or #stepAt: methods be run ALL THE TIME.
-	Morphs that send #startStepping and #stopStepping at appropriate times (i.e. when they are already in the world!!) don't need to answer true to this message"
 
-	^true! !
+	^ true! !
 
-!ExpressionEditorMorph class methodsFor: 'instance creation' stamp: 'NPM 2/17/2022 01:49:12'!
-model: anExpressionEditor 
+!WatchExpressionEditorMorph class methodsFor: 'instance creation' stamp: 'NPM 2/22/2022 02:38:33'!
+model: aWatchExpressionEditor showNameAndActionButtons: aBoolean  
 	
 	^ self
 		new
-		initializeModel: anExpressionEditor ! !
+		initializeModel: aWatchExpressionEditor
+		showNameAndActionButtons: aBoolean ! !
 
 !ADListMorph methodsFor: 'asserting' stamp: 'NPM 2/10/2022 10:40:39'!
 verticalItemSeparationCannotBeNegativeErrorMessage
