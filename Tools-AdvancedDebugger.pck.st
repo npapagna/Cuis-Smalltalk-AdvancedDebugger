@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4913] on 1 March 2022 at 1:10:43 pm'!
+'From Cuis 5.0 [latest update: #4913] on 1 March 2022 at 1:15:35 pm'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 20!
+!provides: 'Tools-AdvancedDebugger' 1 21!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 SystemOrganization addCategory: 'Tools-AdvancedDebugger-UI-Core'!
@@ -884,7 +884,7 @@ openToEdit: aWatchExpression
 		label:  'Edit Watch Expression'
 		onAcceptDo: []! !
 
-!WatchExpressionEditorWindow class methodsFor: 'menu' stamp: 'NPM 2/20/2022 09:53:40'!
+!WatchExpressionEditorWindow class methodsFor: 'menu' stamp: 'NPM 3/1/2022 13:15:08'!
 smalltalkEditorMenuOptions
 
 	^`{
@@ -897,7 +897,7 @@ smalltalkEditorMenuOptions
 			{
 				#itemGroup 		-> 		11.
 				#itemOrder 		-> 		12.
-				#label 			-> 		'Evaluator...'.
+				#label 			-> 		'Live evaluate...'.
 				#selector 		-> 		#evaluateSelection.
 			} asDictionary.
 			
