@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4913] on 1 March 2022 at 1:15:35 pm'!
+'From Cuis 5.0 [latest update: #4913] on 1 March 2022 at 1:31:36 pm'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 21!
+!provides: 'Tools-AdvancedDebugger' 1 22!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 SystemOrganization addCategory: 'Tools-AdvancedDebugger-UI-Core'!
@@ -516,6 +516,18 @@ refresh
 		
 	self morphExtent: self firstSubmorph morphExtent! !
 
+!DebuggerExpressionMorph class methodsFor: 'instance creation' stamp: 'NPM 3/1/2022 13:26:58'!
+forAllTemporaryVariables: aCollectionOfTemporaryVariable in: aTemporaryVariablesInspector  
+	
+	^ aCollectionOfTemporaryVariable collect: [ :temporaryVariable |
+		self forTemporaryVariable: temporaryVariable in: aTemporaryVariablesInspector ]! !
+
+!DebuggerExpressionMorph class methodsFor: 'instance creation' stamp: 'NPM 3/1/2022 13:26:18'!
+forAllWatches: aCollectionOfWatchExpression in: aTemporaryVariablesInspector  
+	
+	^ aCollectionOfWatchExpression
+		collect: [ :watchExpression | self forWatch: watchExpression in: aTemporaryVariablesInspector ]! !
+
 !DebuggerExpressionMorph class methodsFor: 'instance creation' stamp: 'NPM 2/16/2022 00:39:36'!
 forTemporaryVariable: aTemporaryVariable in: aTemporaryVariablesInspector  
 	
@@ -632,32 +644,26 @@ registerToTemporaryVariablesInspectorEvents
 		whenContextChangesSend: #reloadTemporaryVariables
 		to: self! !
 
-!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 2/16/2022 01:32:51'!
+!TemporaryVariablesInspectorMorph methodsFor: 'updating' stamp: 'NPM 3/1/2022 13:31:00'!
 reloadTemporaryVariables
 		
 	temporaryVariablesMorph removeAllItems.
 	
 	temporaryVariablesInspector watchExpressions ifNotEmpty: [
 		temporaryVariablesMorph addItem: (SeparatorMorph labeled: 'WATCHES').
-		temporaryVariablesInspector watchExpressions
-			do: [ :watchExpression |
-				temporaryVariablesMorph addItem: (DebuggerExpressionMorph
-					forWatch: watchExpression
-					in: temporaryVariablesInspector ) ].
+		temporaryVariablesMorph addAllItems: (DebuggerExpressionMorph
+			forAllWatches: temporaryVariablesInspector watchExpressions
+			in: temporaryVariablesInspector).
 		temporaryVariablesMorph addItem: (KernelMorph new morphHeight: 10; color: Color transparent)
 	].
 
 	temporaryVariablesMorph addItem: (SeparatorMorph labeled: 'TEMPORARIES').
 	temporaryVariablesMorph addItem: (DebuggerExpressionMorph
-							forTemporaryVariable: temporaryVariablesInspector thisContextVariable
-							in: temporaryVariablesInspector).
-							
-	(temporaryVariablesInspector pinnedTemporaryVariables, temporaryVariablesInspector temporaryVariables)
-		do: [ :temporaryVariable |
-			temporaryVariablesMorph
-				addItem: (DebuggerExpressionMorph
-							forTemporaryVariable: temporaryVariable
-							in: temporaryVariablesInspector) ].
+		forTemporaryVariable: temporaryVariablesInspector thisContextVariable
+		in: temporaryVariablesInspector).
+	temporaryVariablesMorph addAllItems: (DebuggerExpressionMorph
+		forAllTemporaryVariables: (temporaryVariablesInspector pinnedTemporaryVariables, temporaryVariablesInspector temporaryVariables)
+		in: temporaryVariablesInspector).							
 			
 	
 	! !
@@ -1120,6 +1126,11 @@ initializeScrollbar
 	
 	scrollbar hide.
 	! !
+
+!ADListMorph methodsFor: 'items' stamp: 'NPM 3/1/2022 13:29:24'!
+addAllItems: aColectionOfItems
+
+	aColectionOfItems do: [ :item | self addItem: item ]! !
 
 !ADListMorph methodsFor: 'items' stamp: 'NPM 2/11/2022 11:11:34'!
 addItem: anItem 
@@ -1890,6 +1901,11 @@ initialize
 	
 	isPinnedToDebugger _ false.! !
 
+!DebuggerExpression methodsFor: 'inspecting' stamp: 'NPM 2/16/2022 03:09:18'!
+inspectValue
+	
+	self value inspect! !
+
 !DebuggerExpression methodsFor: 'pinning to debugger' stamp: 'NPM 2/16/2022 01:36:00'!
 isPinnedToDebugger
 	
@@ -1911,11 +1927,6 @@ ifChanged: changedBlock ifNotChanged: notChangedBlock
 isNamed: aName
 
 	^ self name = aName! !
-
-!DebuggerExpression methodsFor: 'as yet unclassified' stamp: 'NPM 2/16/2022 03:09:18'!
-inspectValue
-	
-	self value inspect! !
 
 !DebuggerExpression class methodsFor: 'instance creation' stamp: 'NPM 2/16/2022 01:43:08'!
 pseudoVariableNamed: aName valued: aValue
