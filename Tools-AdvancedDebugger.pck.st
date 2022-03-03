@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4913] on 3 March 2022 at 10:35:11 am'!
+'From Cuis 5.0 [latest update: #4913] on 3 March 2022 at 10:44:50 am'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 23!
+!provides: 'Tools-AdvancedDebugger' 1 24!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 SystemOrganization addCategory: 'Tools-AdvancedDebugger-UI-Core'!
@@ -955,10 +955,10 @@ buildExpressionInput
 		addMorphKeepMorphHeight: (self buildHeader:  'Expression');
 		addMorphUseAll: self buildMorphicCodePane! !
 
-!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:30:57'!
+!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 3/3/2022 10:44:16'!
 buildHeader: aLabel
 
-	^ (LabelMorph contents: aLabel) emphasis: 1! !
+	^ (LabelMorph contents: aLabel) color: Color veryDarkGray ! !
 
 !WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:03:02'!
 buildLayout
