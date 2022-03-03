@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4913] on 1 March 2022 at 1:31:36 pm'!
+'From Cuis 5.0 [latest update: #4913] on 3 March 2022 at 10:35:11 am'!
 'Description '!
-!provides: 'Tools-AdvancedDebugger' 1 22!
+!provides: 'Tools-AdvancedDebugger' 1 23!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger'!
 SystemOrganization addCategory: #'Tools-AdvancedDebugger-UI'!
 SystemOrganization addCategory: 'Tools-AdvancedDebugger-UI-Core'!
@@ -98,7 +98,7 @@ WatchExpressionEditorWindow class
 
 !classDefinition: #WatchExpressionEditorMorph category: #'Tools-AdvancedDebugger-UI'!
 WidgetMorph subclass: #WatchExpressionEditorMorph
-	instanceVariableNames: 'watchExpressionEditor layoutMorph resultLabel acceptAction cancelAction nameInput showNameAndActionButtons'
+	instanceVariableNames: 'watchExpressionEditor layoutMorph resultLabel acceptAction cancelAction nameInput showNameAndActionButtons contextStatusLabel'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Tools-AdvancedDebugger-UI'!
@@ -938,6 +938,16 @@ buildCancelButton
 		action: #cancelContents
 		label: 'Cancel'! !
 
+!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 3/3/2022 10:15:54'!
+buildContextStatusLabel
+
+	contextStatusLabel _ LabelMorph contents: ''.
+	
+	layoutMorph
+		addMorphKeepMorphHeight: (self buildHeader:  'Context status');
+		addMorph: contextStatusLabel fixedHeight: self defaultButtonPaneHeight
+		! !
+
 !WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:30:57'!
 buildExpressionInput
 	
@@ -994,16 +1004,19 @@ buildResultPanel
 		
 	! !
 
-!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/22/2022 02:47:46'!
+!WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 3/3/2022 10:34:40'!
 buildSubmorphs
 
 	self
 		buildLayout;
 		buildNameInput;
+		buildContextStatusLabel;
 		buildExpressionInput;
 		buildResultPanel;
 		buildActionButtons.
-	watchExpressionEditor whenExpressionIsAcceptedSend: #accept to: self. ! !
+		
+	watchExpressionEditor
+		whenExpressionIsAcceptedSend: #accept to: self. ! !
 
 !WatchExpressionEditorMorph methodsFor: 'GUI building' stamp: 'NPM 2/17/2022 01:52:36'!
 defaultButtonPaneHeight
@@ -1042,18 +1055,13 @@ layoutSubmorphs
 
 	layoutMorph morphPosition: 0@0 extent: self morphExtent! !
 
-!WatchExpressionEditorMorph methodsFor: 'stepping' stamp: 'NPM 2/22/2022 02:01:49'!
+!WatchExpressionEditorMorph methodsFor: 'stepping' stamp: 'NPM 3/3/2022 10:25:37'!
 stepAt: millisecondSinceLast
 
-	| result |
-	result _ [ 
-		[ watchExpressionEditor actualWatchExpression value displayStringOrText ]
-			valueWithin: 500 milliSeconds
-			onTimeout: [  'evaluation timed out' ] ]
-		on: Error
-		do: [ 'evaluation failed' ].
-		
-	resultLabel contents: result 
+	self
+		updateContextStatus;
+		updateResult
+	
 	
 	! !
 
@@ -1066,6 +1074,29 @@ stepTime
 wantsSteps
 
 	^ true! !
+
+!WatchExpressionEditorMorph methodsFor: 'updating' stamp: 'NPM 3/3/2022 10:25:11'!
+updateContextStatus
+
+	 | contextStatus |
+	contextStatus _ watchExpressionEditor actualWatchExpression isContextExecuting
+		ifTrue: [ 'Executing' ] ifFalse: [ 'Terminated' ].
+		
+	contextStatusLabel contents: contextStatus.
+	! !
+
+!WatchExpressionEditorMorph methodsFor: 'updating' stamp: 'NPM 3/3/2022 10:25:45'!
+updateResult
+
+	| result |
+	result _ [ 
+		[ watchExpressionEditor actualWatchExpression value displayStringOrText ]
+			valueWithin: 500 milliSeconds
+			onTimeout: [  'evaluation timed out' ] ]
+		on: Error
+		do: [ 'evaluation failed' ].
+		
+	resultLabel contents: result! !
 
 !WatchExpressionEditorMorph class methodsFor: 'instance creation' stamp: 'NPM 2/22/2022 02:38:33'!
 model: aWatchExpressionEditor showNameAndActionButtons: aBoolean  
@@ -2101,6 +2132,14 @@ kind
 	
 	^ 'Watch expression'! !
 
+!WatchExpression methodsFor: 'copying' stamp: 'NPM 2/16/2022 00:52:39'!
+copy
+
+	^ self class
+		named: name
+		toEvaluate: expression
+		in: context! !
+
 !WatchExpression methodsFor: 'editing' stamp: 'NPM 1/7/2022 17:41:25'!
 changeExpressionTo: anExpression  
 	
@@ -2194,6 +2233,11 @@ initializeNamed: aName toEvaluate: anExpressionBlock in: aContext
 
 	self changeExpressionTo: anExpressionBlock ! !
 
+!WatchExpression methodsFor: 'testing' stamp: 'NPM 3/3/2022 10:25:11'!
+isContextExecuting
+	
+	^ context isDead not! !
+
 !WatchExpression methodsFor: 'testing' stamp: 'NPM 1/7/2022 17:51:18'!
 renameTo: newName
 	
@@ -2204,14 +2248,6 @@ renameTo: newName
 	self triggerRenamedEvent.
 	
 	! !
-
-!WatchExpression methodsFor: 'as yet unclassified' stamp: 'NPM 2/16/2022 00:52:39'!
-copy
-
-	^ self class
-		named: name
-		toEvaluate: expression
-		in: context! !
 
 !WatchExpression class methodsFor: 'instance creation' stamp: 'NPM 1/5/2022 17:59:51'!
 named: aName toEvaluate: anExpressionBlock in: aContext  

@@ -21,6 +21,7 @@ project does not follow [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Context menu item and shortcut (shift + double-click) for editing watches.
 * Support for evaluating expressions in the debugger's context. It is available via the temporary variable's inspector context menu > `Evaluate expression...`.
 * Support for live evaluating expressions from a selection in the debugger.
+* Context status (either Executing or Terminated) to the watch expression editor.
 
 ## Changed
 * Uses the new `AdvancedDebuggerWindow` instead of the built-in `DebuggerWindow` for opening the debugger.  
